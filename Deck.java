@@ -11,22 +11,19 @@ public class Deck {
 
     public Deck(int playerNum) {
         this.playerNum = playerNum;
+        cards = new LinkedList<Card>();
     }
 
     //配置牌组
     public void prepareDeck(){
-        System.out.println("开始配置牌组");
-
         //将SeeTheFuture与Nope加入牌组，每种五张
         Card.Function[] functionWithFiveCards = new Card.Function[]{
                 Card.Function.SeeTheFuture,
                 Card.Function.Nope
         };
-        System.out.println("====");
         for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
                 cards.addLast(new Card(function,Card.Cat.NotCat));
-                System.out.println("testing");
             }
         }
 
@@ -39,7 +36,7 @@ public class Deck {
         };
         for (Card.Function function : functionWithFourCards) {
             for (int j = 0; j < 4; j++) {
-                cards.add(new Card(function,null));
+                cards.add(new Card(function,Card.Cat.NotCat));
             }
         }
 
@@ -48,15 +45,12 @@ public class Deck {
         for (Card.Cat cat : cats) {
             for (int j = 0; j < 4; j++) {
                 //将其余功能牌(除Defuse/ExplodingKitten)加入牌组，每种四张
-                cards.add(new Card(null, cat));
-
+                cards.add(new Card(Card.Function.NotFunction, cat));
             }
         }
 
         //将多余的命加入牌组
         addDefuse();
-
-        System.out.println("配置牌组成功");
     }
 
     //洗牌

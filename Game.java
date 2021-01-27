@@ -107,7 +107,7 @@ public class Game {
 
         //getPlayerHand(pid).add(deck.drawCard());
 
-        //移动房前玩家指针至下一位玩家
+        //移动前玩家指针至下一位玩家
         currentPlayer = (currentPlayer+1) % playerIds.length;
     }
 

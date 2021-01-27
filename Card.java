@@ -1,6 +1,7 @@
 package boot;
 
 public class Card {
+    //所有功能牌
     enum Function {
         SeeTheFuture, Nope, Attack, Skip, Shuffle, Favor, Defuse, NotFunction;
 
@@ -11,6 +12,7 @@ public class Card {
         }
     }
 
+    //所有普通猫猫牌
     enum Cat {
         TacoCat, HairyPotatoCat, Cattermelon, BeardCat, RainbowRalphingCat, ExplodingKitten, NotCat;
 
@@ -37,4 +39,11 @@ public class Card {
         return cat;
     }
 
+    @Override
+    public String toString() {
+        if (function == Function.NotFunction) {
+            return "Card: " + cat;
+        }
+        return "Card: " + function;
+    }
 }
