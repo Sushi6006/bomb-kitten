@@ -60,7 +60,7 @@ public class Deck {
 
     //添加炸弹
     public void addBomb(){
-        Card bomb = new Card(null,Card.Cat.ExplodingKitten);
+        Card bomb = new Card(Card.Function.NotFunction,Card.Cat.ExplodingKitten);
         for (int i = 0; i < playerNum-1; i++) {
             cards.add(bomb);
         }
@@ -72,7 +72,7 @@ public class Deck {
         int defuseLeft = 6 - playerNum;
 
         for (int i = 0; i < defuseLeft; i++) {
-            cards.add(new Card(Card.Function.Defuse,null));
+            cards.add(new Card(Card.Function.Defuse, Card.Cat.NotCat));
         }
     }
 
@@ -95,7 +95,9 @@ public class Deck {
 
     //用于获取牌堆上方n张牌的牌面信息
     public ArrayList<Card> getTopCards(int n){
-        ArrayList<Card> ret = null;
+        ArrayList<Card> ret = new ArrayList<Card>();
+
+        //如果牌堆内剩余牌的数量少于n张牌，则获取牌堆内全部牌面信息
         if(cards.size() < n){
             for (int i = 1; i <= cards.size(); i++) {
                 ret.add(cards.get(cards.size()-i));

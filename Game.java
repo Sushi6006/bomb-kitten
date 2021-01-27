@@ -9,7 +9,6 @@ public class Game {
     private int currentPlayer; //当前回合玩家index
     private int playerLeft; //当前回合存活玩家数量
     private String[] playerIds; //存储玩家id
-    private ArrayList<Card> tempPile;
     private Deck deck;
     private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
     private ArrayList<Card> stockpile; //弃牌堆
@@ -20,27 +19,29 @@ public class Game {
     }
 
     public Game(String[] pids) {
-        int playerNum = pids.length;
+        playerLeft = pids.length;
 
         //准备牌组
-        deck = new Deck(playerNum);
+        deck = new Deck(playerLeft);
         deck.prepareDeck();
 
         //准备弃牌堆
         stockpile = new ArrayList<Card>();
 
+        //记录所有玩家id
         playerIds = pids;
+
+        //由第0位玩家开始游戏
         currentPlayer = 0;
 
         //存储所有玩家手牌
         playerHand = new ArrayList<ArrayList<Card>>();
 
-
         //洗牌后发给每名玩家4张牌并发一张Defuse
         deck.shuffle();
         for (int i = 0; i < pids.length; i++) {
             ArrayList<Card> hand = new ArrayList<Card>(Arrays.asList(deck.dealCard(4)));
-            hand.add(new Card(Card.Function.Defuse,null));
+            hand.add(new Card(Card.Function.Defuse,Card.Cat.NotCat));
             playerHand.add(hand);
         }
 
@@ -102,7 +103,7 @@ public class Game {
         checkPlayerTurn(pid);
 
         //当前玩家摸牌
-        tempPile = deck.getTopCards(1);
+        
 
 
         //getPlayerHand(pid).add(deck.drawCard());
