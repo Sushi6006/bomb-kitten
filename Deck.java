@@ -2,11 +2,12 @@ package boot;
 
 import Uno.UnoCard;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 
 public class Deck {
-    private LinkedList<Cards> cards;
+    private LinkedList<Card> cards;
     private int playerNum;
 
     public Deck(int playerNum) {
@@ -14,47 +15,48 @@ public class Deck {
     }
 
     //配置牌组
-    public void reset(){
-        //SeeTheFuture与Nope各有5张牌
-        Cards.Function[] functionWithFiveCards = new Cards.Function[]{
-                Cards.Function.SeeTheFuture,
-                Cards.Function.Nope
-        };
+    public void prepareDeck(){
 
-        for (Cards.Function function : functionWithFiveCards) {
+        System.out.println("开始配置牌组");
+
+        //将SeeTheFuture与Nope加入牌组，每种五张
+        Card.Function[] functionWithFiveCards = new Card.Function[]{
+                Card.Function.SeeTheFuture,
+                Card.Function.Nope
+        };
+        for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
-                //将SeeTheFuture与Nope加入牌组，每种五张
-                cards.add(new FunctionCards(function));
+                cards.addLast(new Card(function,null));
             }
         }
-
-        //其余功能牌各有四张
-        Cards.Function[] functionWithFourCards = new Cards.Function[]{
-                Cards.Function.Attack,
-                Cards.Function.Skip,
-                Cards.Function.Shuffle,
-                Cards.Function.Favor
-        };
-
+        System.out.println("testing");
         //将其余功能牌加入牌组，每种四张
-        for (Cards.Function function : functionWithFourCards) {
+        Card.Function[] functionWithFourCards = new Card.Function[]{
+                Card.Function.Attack,
+                Card.Function.Skip,
+                Card.Function.Shuffle,
+                Card.Function.Favor
+        };
+        for (Card.Function function : functionWithFourCards) {
             for (int j = 0; j < 4; j++) {
-                cards.add(new FunctionCards(function));
+                cards.add(new Card(function,null));
             }
         }
 
         //将所有普通猫加入牌组，各有四张
-        Cards.Cat[] cats = Cards.Cat.values();
-        for (Cards.Cat cat : cats) {
+        Card.Cat[] cats = Card.Cat.values();
+        for (Card.Cat cat : cats) {
             for (int j = 0; j < 4; j++) {
                 //将其余功能牌(除Defuse/ExplodingKitten)加入牌组，每种四张
-                cards.add(new CatCards(cat));
+                cards.add(new Card(null, cat));
 
             }
         }
 
         //将多余的命加入牌组
         addDefuse();
+
+        System.out.println("配置牌组成功");
     }
 
     //洗牌
@@ -64,8 +66,7 @@ public class Deck {
 
     //添加炸弹
     public void addBomb(){
-        Cards bomb = new FunctionCards(Cards.Function.ExplodingKitten);
-
+        Card bomb = new Card(null,Card.Cat.ExplodingKitten);
         for (int i = 0; i < playerNum-1; i++) {
             cards.add(bomb);
         }
@@ -73,42 +74,40 @@ public class Deck {
 
     //将多余的命加入牌组
     public void addDefuse(){
-        Cards.Function[] life = new Cards.Function[]{
-                Cards.Function.Defuse
-        };
-        //命总共只有6张
+        //Defuse总共只有6张,计算发给玩家后剩余Defuse数量
         int defuseLeft = 6 - playerNum;
+
         for (int i = 0; i < defuseLeft; i++) {
-            cards.add(new FunctionCards(life[0]));
+            cards.add(new Card(Card.Function.Defuse,null));
         }
     }
 
     //从牌堆顶抽取一张牌
-    public Cards drawCard() {
-        return cards.getLast();
+    public Card drawCard() {
+        return cards.removeLast();
     }
 
-    //用于开局时发牌的函数
-    public Cards[] drawCard(int a) {
+    //开局每人发4张牌
+    public Card[] dealCard(int a) {
         if (a != 4) {
-            throw new IllegalArgumentException("Must draw 4 cards");
+            throw new IllegalArgumentException("Must deal 4 cards at the beginning");
         }
-        Cards[] ret = new Cards[a];
+        Card[] ret = new Card[a];
         for (int i = 0; i < a; i++) {
             ret[i] = cards.removeLast();
         }
         return ret;
     }
 
-    //用于seeTheFuture观察并返回牌堆顶三张牌
-    public LinkedList<Cards> seeTopThreeCards(){
-        LinkedList<Cards> ret = null;
-        if(cards.size() < 3){
+    //用于获取牌堆上方n张牌的牌面信息
+    public ArrayList<Card> getTopCards(int n){
+        ArrayList<Card> ret = null;
+        if(cards.size() < n){
             for (int i = 1; i <= cards.size(); i++) {
                 ret.add(cards.get(cards.size()-i));
             }
         }else {
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i <= n; i++) {
                 ret.add(cards.get(cards.size()-i));
             }
         }
