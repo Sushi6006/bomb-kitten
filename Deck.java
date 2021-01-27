@@ -26,7 +26,7 @@ public class Deck {
         };
         for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
-                cards.addLast(new Card(function,null));
+                cards.addLast(new Card(function, Card.Cat.None));
             }
         }
         System.out.println("testing");
