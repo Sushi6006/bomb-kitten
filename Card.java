@@ -2,7 +2,7 @@ package boot;
 
 public class Card {
     enum Function {
-        SeeTheFuture, Nope, Attack, Skip, Shuffle, Favor, Defuse, None;
+        SeeTheFuture, Nope, Attack, Skip, Shuffle, Favor, Defuse, NotFunction;
 
         private static final Function[] functions = Function.values();
 
@@ -12,7 +12,7 @@ public class Card {
     }
 
     enum Cat {
-        TacoCat, HairyPotatoCat, Cattermelon, BeardCat, RainbowRalphingCat, ExplodingKitten,None;
+        TacoCat, HairyPotatoCat, Cattermelon, BeardCat, RainbowRalphingCat, ExplodingKitten, NotCat;
 
         private static final Cat[] cats = Cat.values();
 
@@ -28,11 +28,6 @@ public class Card {
         this.function = function;
         this.cat = cat;
     }
-
-    //    public Card(Function function, Cat cat) {
-//        this.function = function;
-//        this.cat = cat;
-//    }
 
     public Function getFunction() {
         return function;

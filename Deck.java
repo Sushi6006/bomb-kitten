@@ -1,10 +1,9 @@
 package boot;
 
-import Uno.UnoCard;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
+
 
 public class Deck {
     private LinkedList<Card> cards;
@@ -16,7 +15,6 @@ public class Deck {
 
     //配置牌组
     public void prepareDeck(){
-
         System.out.println("开始配置牌组");
 
         //将SeeTheFuture与Nope加入牌组，每种五张
@@ -24,12 +22,14 @@ public class Deck {
                 Card.Function.SeeTheFuture,
                 Card.Function.Nope
         };
+        System.out.println("====");
         for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
-                cards.addLast(new Card(function, Card.Cat.None));
+                cards.addLast(new Card(function,Card.Cat.NotCat));
+                System.out.println("testing");
             }
         }
-        System.out.println("testing");
+
         //将其余功能牌加入牌组，每种四张
         Card.Function[] functionWithFourCards = new Card.Function[]{
                 Card.Function.Attack,
