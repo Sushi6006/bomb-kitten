@@ -4,13 +4,17 @@ package boot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Scanner;
 
 public class Game {
     private int currentPlayerIndex; //当前回合玩家index
-    private ArrayList playerIds; //存储玩家id
+    private ArrayList<String> playerIds; //存储玩家id
     private Deck deck;
     private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
     private LinkedList<Card> stockpile; //弃牌堆
+    private boolean underAttack; //记录当前玩家是否被上家Attack
+    private int bombNeededBack;
+
 
     public static void main(String[] args) {
         ArrayList<String> player = new ArrayList<>();
@@ -32,6 +36,12 @@ public class Game {
 
         //记录所有玩家id
         playerIds = pids;
+
+        //记录玩家是否被上一位玩家attack
+        underAttack = false;
+
+        //记录当前回合有多少炸弹需要被放回牌堆
+        bombNeededBack = 0;
 
         //由第0位玩家开始游戏
         currentPlayerIndex = 0;
@@ -91,8 +101,8 @@ public class Game {
         }
     }
 
-    
-    //用于判断牌中是否有炸弹，与getTopCards组合使用
+
+    //用于判断牌中是否有炸弹
     public boolean gotBombed(ArrayList<Card> card) {
         return card.contains(Card.Cat.ExplodingKitten);
     }
@@ -107,7 +117,6 @@ public class Game {
         //检查是否为当前玩家回合
         checkPlayerTurn(pid);
 
-
         //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
         if (gotBombed(deck.getTopCards(1))) {
             //获取当前回合玩家手牌信息
@@ -121,12 +130,33 @@ public class Game {
                 //将牌堆最上方的炸弹移除牌堆
                 deck.drawCard();
 
-                //玩家需要执行将炸弹放回牌堆的操作
-                deck.addBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), );
+                //如果该玩家在当前回合被攻击，牌堆顶部为炸弹且有defuse，则先将炸弹移出牌堆,将玩家手牌中的一张Defuse丢入弃牌堆，继续回合
+                if (underAttack){
+                    deck.drawCard();
+                    bombNeededBack++;
+                    stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
+                    hand.remove(Card.Function.Defuse);
+                    underAttack = false;
+                }else{
+                    //将已翻开未爆炸的炸弹全部放回牌堆
+                    if (bombNeededBack > 0){
+                        for (int i = 0; i < bombNeededBack; i++) {
+                            deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten),0);
+                        }
 
-                //移动当前玩家指针至下一位玩家
-                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                        //将未爆炸炸弹放入牌堆后，计数器清零
+                        bombNeededBack = 0;
+                    }
+                    //玩家需要执行将炸弹放回牌堆的操作
+                    deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten),0);
+
+                    //移动当前玩家指针至下一位玩家
+                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                }
             } else {
+                //将牌堆最上方的炸弹移除牌堆
+                deck.drawCard();
+
                 //玩家被炸死，将该玩家id从游戏中移除
                 playerIds.remove(pid);
                 currentPlayerIndex = currentPlayerIndex % playerIds.size();
@@ -135,20 +165,24 @@ public class Game {
                 System.out.println(pid + "被炸死了！");
             }
         } else {
-            //如果顶部一张牌不是炸弹，则玩家从牌堆顶部抽取一张牌，结束当前回合
-            getPlayerHand(pid).add(deck.drawCard());
-            //移动当前玩家指针至下一位玩家
-            currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+            //如果该玩家在当前回合被攻击，牌堆顶部不是炸弹，则摸一张牌后继续回合
+            if (underAttack){
+                getPlayerHand(pid).add(deck.drawCard());
+                underAttack = false;
+            }else{
+                //如果顶部一张牌不是炸弹，则玩家从牌堆顶部抽取一张牌，结束当前回合
+                getPlayerHand(pid).add(deck.drawCard());
+                //移动当前玩家指针至下一位玩家
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+            }
         }
     }
 
     //玩家出牌动作
-    //如玩家打出的牌为Shuffle，则将牌组重新洗牌
-    //如玩家打出的牌为Skip。则跳过自身当前回合
 
     //如玩家打出的手牌为SeeTheFuture,则返回牌堆顶部三张牌的牌面信息
     //如玩家打出的手牌为Nope，则无效化其他玩家所打出的牌(这tm该怎么实现。。。)
-    //如玩家打出的牌为Attack，则跳过自身当前回合并强制下一位玩家摸牌两次
+
     //若玩家打出的牌为Favor，则玩家指定一名其他玩家给其一张牌
     //若玩家打出的牌为两张相同的普通猫组合，则指定一名玩家抽取其一张手牌
     //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
@@ -162,27 +196,63 @@ public class Game {
         //获取当前回合玩家手牌信息
         ArrayList<Card> hand = getPlayerHand(pid);
 
+
         //如果打出的牌数量为1张，则说明打出的是功能牌
         if (cardPlay.size() == 1) {
             Card card = cardPlay.get(0);
+
             if (card.getFunction() == Card.Function.Shuffle) {
+                //如玩家打出的牌为Shuffle，则将牌组重新洗牌
                 deck.shuffle();
+                stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
+
             } else if (card.getFunction() == Card.Function.Skip) {
-                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                //如果是被上家Attack的状态下打出一张Skip则underAttack状态调整为false(剩余一次摸牌可以视作结束回合时的正常摸牌)
+                if (underAttack){
+                    stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
+                    underAttack = false;
+                }else{
+                    //如玩家打出的牌为Skip。则跳过自身当前回合
+                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                    stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
+                }
+
+            } else if (card.getFunction() == Card.Function.SeeTheFuture) {
+
+            } else if (card.getFunction() == Card.Function.Nope) {
+
+            } else if (card.getFunction() == Card.Function.Attack) {
+                //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合(可用一张Attack直接抵消两回合)
+                if (underAttack){
+                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                    stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
+                }else{
+                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                    stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
+
+                    //将当前玩家被Attack状态调整为true
+                    underAttack = true;
+                }
+
+            } else if (card.getFunction() == Card.Function.Favor) {
+
             }
-        }else if (cardPlay.size() == 2){
+        } else if (cardPlay.size() == 2) {
             //打出的牌数量为2，说明打出的是两张猫猫牌
 
-        }else if (cardPlay.size() == 3){
+        } else if (cardPlay.size() == 3) {
 
 
-        }else if (cardPlay.size() == 5){
+        } else if (cardPlay.size() == 5) {
 
         }
     }
+
+
+
 }
 
-
+//用于限制玩家在不属于自己的回合出牌
 class InvalidPlayerTurnException extends Exception {
     String playerId;
 
@@ -196,10 +266,11 @@ class InvalidPlayerTurnException extends Exception {
     }
 }
 
-class InvalidCardPlayException extends Exception{
+//用于判断玩家在回合中所打出的牌是否符合规则
+class InvalidCardPlayException extends Exception {
     Card card;
 
-    public InvalidCardPlayException(String message, Card card){
+    public InvalidCardPlayException(String message, Card card) {
         super(message);
         this.card = card;
     }
