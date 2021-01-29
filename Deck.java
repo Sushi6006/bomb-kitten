@@ -110,22 +110,7 @@ public class Deck {
         return ret;
     }
 
+    public void insertCard(int index){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    }
 }

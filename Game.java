@@ -91,8 +91,14 @@ public class Game {
         }
     }
 
+    //用于判断牌中是否有炸弹，与getTopCards组合使用
     public boolean gotBombed(ArrayList<Card> card){
         return card.contains(Card.Cat.ExplodingKitten);
+    }
+
+    //用于玩家被炸并使用Defuse后将炸弹放回牌堆的操作
+    public void putBackBomb(Deck deck, int index){
+
     }
 
     //玩家摸牌动作
@@ -110,9 +116,14 @@ public class Game {
             if(hand.contains(Card.Function.Defuse)){
                 hand.remove(Card.Function.Defuse);
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
+
+                //玩家需要执行将炸弹放回牌堆的操作
+                
+
+                //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
             }else{
-                //玩家如果被炸死，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，不是末尾则当前玩家index保持不动
+                //玩家如果被炸死，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，如不是末位则当前玩家index保持不动
                 if (currentPlayerIndex == playerIds.size()-1){
                     currentPlayerIndex = 0;
                 }
@@ -120,9 +131,11 @@ public class Game {
                 //玩家被炸死，将该玩家id从游戏中移除
                 playerIds.remove(pid);
 
-                //提示当前玩家出局
+                //提示当前玩家出局，这个功能需要看gui怎么操作再来添加吧
+
             }
         }else{
+            //如果顶部一张牌不是炸弹，则玩家从牌堆顶不抽取一张牌，结束当前回合
             getPlayerHand(pid).add(deck.drawCard());
             //移动当前玩家指针至下一位玩家
             currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
