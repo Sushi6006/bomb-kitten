@@ -13,7 +13,7 @@ public class Game {
     private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
     private LinkedList<Card> stockpile; //弃牌堆
     private boolean underAttack; //记录当前玩家是否被上家Attack
-    private int bombNeededBack;
+    private int bombNeededBack; //用于记录已翻开(被defuse抵消掉的)却未爆炸的炸弹数
 
 
     public static void main(String[] args) {
@@ -130,25 +130,25 @@ public class Game {
                 //将牌堆最上方的炸弹移除牌堆
                 deck.drawCard();
 
-                //如果该玩家在当前回合被攻击，牌堆顶部为炸弹且有defuse，则先将炸弹移出牌堆,将玩家手牌中的一张Defuse丢入弃牌堆，继续回合
-                if (underAttack){
-                    deck.drawCard();
-                    bombNeededBack++;
-                    stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
-                    hand.remove(Card.Function.Defuse);
-                    underAttack = false;
-                }else{
-                    //将已翻开未爆炸的炸弹全部放回牌堆
-                    if (bombNeededBack > 0){
-                        for (int i = 0; i < bombNeededBack; i++) {
-                            deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten),0);
-                        }
+                //未爆弹计数器增加一
+                bombNeededBack++;
 
-                        //将未爆炸炸弹放入牌堆后，计数器清零
-                        bombNeededBack = 0;
+                //如果该玩家在当前回合被攻击，牌堆顶部为炸弹且有defuse，则先将炸弹移出牌堆,将玩家手牌中的一张Defuse丢入弃牌堆，继续回合
+                if (underAttack) {
+                    deck.drawCard();
+                    hand.remove(Card.Function.Defuse);
+                    stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
+                    underAttack = false;
+                    
+                } else {
+                    //将已翻开未爆炸的炸弹全部放回牌堆
+                    for (int i = 0; i < bombNeededBack; i++) {
+                        deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), 0);
+
                     }
-                    //玩家需要执行将炸弹放回牌堆的操作
-                    deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten),0);
+
+                    //将未爆炸炸弹放入牌堆后，计数器清零
+                    bombNeededBack = 0;
 
                     //移动当前玩家指针至下一位玩家
                     currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
@@ -166,10 +166,10 @@ public class Game {
             }
         } else {
             //如果该玩家在当前回合被攻击，牌堆顶部不是炸弹，则摸一张牌后继续回合
-            if (underAttack){
+            if (underAttack) {
                 getPlayerHand(pid).add(deck.drawCard());
                 underAttack = false;
-            }else{
+            } else {
                 //如果顶部一张牌不是炸弹，则玩家从牌堆顶部抽取一张牌，结束当前回合
                 getPlayerHand(pid).add(deck.drawCard());
                 //移动当前玩家指针至下一位玩家
@@ -208,10 +208,10 @@ public class Game {
 
             } else if (card.getFunction() == Card.Function.Skip) {
                 //如果是被上家Attack的状态下打出一张Skip则underAttack状态调整为false(剩余一次摸牌可以视作结束回合时的正常摸牌)
-                if (underAttack){
+                if (underAttack) {
                     stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
                     underAttack = false;
-                }else{
+                } else {
                     //如玩家打出的牌为Skip。则跳过自身当前回合
                     currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                     stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
@@ -222,15 +222,12 @@ public class Game {
             } else if (card.getFunction() == Card.Function.Nope) {
 
             } else if (card.getFunction() == Card.Function.Attack) {
-                //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合(可用一张Attack直接抵消两回合)
-                if (underAttack){
-                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-                    stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
-                }else{
-                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-                    stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
+                //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
 
-                    //将当前玩家被Attack状态调整为true
+                //如打出Attack时自身没有被施加underAttack状态，则将下一位玩家的underAttack状态调整为true
+                if (!underAttack) {
                     underAttack = true;
                 }
 
@@ -247,7 +244,6 @@ public class Game {
 
         }
     }
-
 
 
 }
