@@ -15,7 +15,7 @@ public class Deck {
     }
 
     //配置牌组
-    public void prepareDeck(){
+    public void prepareDeck() {
         //将SeeTheFuture与Nope加入牌组，每种五张
         Card.Function[] functionWithFiveCards = new Card.Function[]{
                 Card.Function.SeeTheFuture,
@@ -23,7 +23,7 @@ public class Deck {
         };
         for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
-                cards.addLast(new Card(function,Card.Cat.NotCat));
+                cards.addLast(new Card(function, Card.Cat.NotCat));
             }
         }
 
@@ -36,7 +36,7 @@ public class Deck {
         };
         for (Card.Function function : functionWithFourCards) {
             for (int j = 0; j < 4; j++) {
-                cards.add(new Card(function,Card.Cat.NotCat));
+                cards.add(new Card(function, Card.Cat.NotCat));
             }
         }
 
@@ -54,20 +54,20 @@ public class Deck {
     }
 
     //洗牌
-    public void shuffle(){
+    public void shuffle() {
         Collections.shuffle(cards);
     }
 
     //添加炸弹
-    public void addBomb(){
-        Card bomb = new Card(Card.Function.NotFunction,Card.Cat.ExplodingKitten);
-        for (int i = 0; i < playerNum-1; i++) {
+    public void addBomb() {
+        Card bomb = new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten);
+        for (int i = 0; i < playerNum - 1; i++) {
             cards.add(bomb);
         }
     }
 
     //将多余的命加入牌组
-    public void addDefuse(){
+    public void addDefuse() {
         //Defuse总共只有6张,计算发给玩家后剩余Defuse数量
         int defuseLeft = 6 - playerNum;
 
@@ -80,6 +80,7 @@ public class Deck {
     public Card drawCard() {
         return cards.removeLast();
     }
+
 
     //开局每人发4张牌
     public Card[] dealCard(int a) {
@@ -94,23 +95,24 @@ public class Deck {
     }
 
     //用于获取牌堆上方n张牌的牌面信息
-    public ArrayList<Card> getTopCards(int n){
+    public ArrayList<Card> getTopCards(int n) {
         ArrayList<Card> ret = new ArrayList<Card>();
 
         //如果牌堆内剩余牌的数量少于n张牌，则获取牌堆内全部牌面信息
-        if(cards.size() < n){
+        if (cards.size() < n) {
             for (int i = 1; i <= cards.size(); i++) {
-                ret.add(cards.get(cards.size()-i));
+                ret.add(cards.get(cards.size() - i));
             }
-        }else {
+        } else {
             for (int i = 1; i <= n; i++) {
-                ret.add(cards.get(cards.size()-i));
+                ret.add(cards.get(cards.size() - i));
             }
         }
         return ret;
     }
 
-    public void insertCard(int index){
-
+    //将炸弹按指定位置插入牌堆
+    public void insertBomb(Card bomb, int index) {
+        cards.add(index, bomb);
     }
 }

@@ -117,22 +117,21 @@ public class Game {
                 hand.remove(Card.Function.Defuse);
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
 
-                //玩家需要执行将炸弹放回牌堆的操作
+                //将牌堆最上方的炸弹移除牌堆
+                deck.drawCard();
 
+                //玩家需要执行将炸弹放回牌堆的操作
+                deck.addBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), );
 
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
             } else {
-                //玩家如果被炸死，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，如不是末位则当前玩家index保持不动
-                if (currentPlayerIndex == playerIds.size() - 1) {
-                    currentPlayerIndex = 0;
-                }
-
                 //玩家被炸死，将该玩家id从游戏中移除
                 playerIds.remove(pid);
+                currentPlayerIndex = currentPlayerIndex % playerIds.size();
 
-                //提示当前玩家出局，这个功能需要看gui怎么操作再来添加吧
-
+                //提示当前玩家出局，这个功能需要看gui怎么操作再来完善
+                System.out.println(pid + "被炸死了！");
             }
         } else {
             //如果顶部一张牌不是炸弹，则玩家从牌堆顶不抽取一张牌，结束当前回合
@@ -145,9 +144,7 @@ public class Game {
     public void submitPlayerCard(String pid) throws InvalidPlayerTurnException {
 
     }
-
 }
-
 
 
 class InvalidPlayerTurnException extends Exception {
