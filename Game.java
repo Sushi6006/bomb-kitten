@@ -6,40 +6,42 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 public class Game {
-    private int currentPlayer; //当前回合玩家index
-    private int playerLeft; //当前回合存活玩家数量
-    private String[] playerIds; //存储玩家id
+    private int currentPlayerIndex; //当前回合玩家index
+    private ArrayList playerIds; //存储玩家id
     private Deck deck;
     private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
-    private ArrayList<Card> stockpile; //弃牌堆
+    private LinkedList<Card> stockpile; //弃牌堆
 
     public static void main(String[] args) {
-        String[] player = {"alex","bob","charles","dan"};
+        ArrayList<String> player = new ArrayList<>();
+        player.add("alex");
+        player.add("bob");
+        player.add("charles");
+        player.add("dan");
+        System.out.println(player);
         Game game = new Game(player);
     }
 
-    public Game(String[] pids) {
-        playerLeft = pids.length;
-
+    public Game(ArrayList<String> pids) {
         //准备牌组
-        deck = new Deck(playerLeft);
+        deck = new Deck(pids.size());
         deck.prepareDeck();
 
         //准备弃牌堆
-        stockpile = new ArrayList<Card>();
+        stockpile = new LinkedList<>();
 
         //记录所有玩家id
         playerIds = pids;
 
         //由第0位玩家开始游戏
-        currentPlayer = 0;
+        currentPlayerIndex = 0;
 
         //存储所有玩家手牌
         playerHand = new ArrayList<ArrayList<Card>>();
 
         //洗牌后发给每名玩家4张牌并发一张Defuse
         deck.shuffle();
-        for (int i = 0; i < pids.length; i++) {
+        for (int i = 0; i < pids.size(); i++) {
             ArrayList<Card> hand = new ArrayList<Card>(Arrays.asList(deck.dealCard(4)));
             hand.add(new Card(Card.Function.Defuse,Card.Cat.NotCat));
             playerHand.add(hand);
@@ -52,31 +54,23 @@ public class Game {
 
     //当存活玩家为1名时游戏结束
     public boolean isGameOver() {
-        return playerLeft == 1;
+        return playerIds.size() == 1;
     }
 
     //获取当前回合玩家信息
     public String getCurrentPlayer() {
-        return this.playerIds[this.currentPlayer];
+        return (String) this.playerIds.get(this.currentPlayerIndex);
     }
 
-    //获取之前玩家信息
-    public String getPreviousPlayer(int i) {
-        int index = this.currentPlayer - i;
-        if (index == -1) {
-            index = playerIds.length - 1;
-        }
-        return this.playerIds[index];
-    }
 
     //获取全部玩家信息
-    public String[] getPlayers() {
+    public ArrayList<String> getPlayers() {
         return playerIds;
     }
 
     //获取玩家手牌信息
     public ArrayList<Card> getPlayerHand(String pid) {
-        int index = Arrays.asList(playerIds).indexOf(pid);
+        int index = playerIds.indexOf(pid);
         return playerHand.get(index);
     }
 
@@ -92,9 +86,13 @@ public class Game {
 
     //检查是否轮到该玩家回合,还需要完善打出nope的case
     public void checkPlayerTurn(String pid) throws InvalidPlayerTurnException {
-        if (this.playerIds[this.currentPlayer] != pid) {
+        if (this.playerIds.get(this.currentPlayerIndex) != pid) {
             throw new InvalidPlayerTurnException("It is not " + pid + " 's turn", pid);
         }
+    }
+
+    public boolean gotBombed(ArrayList<Card> card){
+        return card.contains(Card.Cat.ExplodingKitten);
     }
 
     //玩家摸牌动作
@@ -102,18 +100,36 @@ public class Game {
         //检查是否为当前玩家回合
         checkPlayerTurn(pid);
 
-        //当前玩家摸牌
-        
+        //当前玩家摸牌,如果被炸则检查手牌中有无Defuse，有则Defuse减一，没有则该玩家出局。
+        if(gotBombed(deck.getTopCards(1))){
+            //获取当前回合玩家手牌信息
+            ArrayList<Card> hand = getPlayerHand(pid);
 
+            if(hand.contains(Card.Function.Defuse)){
+                //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
+                hand.remove(Card.Function.Defuse);
+                stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
+            }
 
-        //getPlayerHand(pid).add(deck.drawCard());
+            //玩家被炸，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，不是末尾则当前玩家index保持不动
+            if (currentPlayerIndex == playerIds.size()-1){
+                currentPlayerIndex = 0;
+            }
 
-        //移动前玩家指针至下一位玩家
-        currentPlayer = (currentPlayer+1) % playerIds.length;
+            //玩家被炸死，将该玩家id从游戏中移除
+            playerIds.remove(pid);
+
+            //提示当前玩家出局
+
+        }else{
+            getPlayerHand(pid).add(deck.drawCard());
+            //移动当前玩家指针至下一位玩家
+            currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
+        }
     }
-
-
 }
+
+
 
 class InvalidPlayerTurnException extends Exception {
     String playerId;
