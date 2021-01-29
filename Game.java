@@ -100,31 +100,32 @@ public class Game {
         //检查是否为当前玩家回合
         checkPlayerTurn(pid);
 
-        //当前玩家摸牌,如果被炸则检查手牌中有无Defuse，有则Defuse减一，没有则该玩家出局。
+
+        //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
         if(gotBombed(deck.getTopCards(1))){
             //获取当前回合玩家手牌信息
             ArrayList<Card> hand = getPlayerHand(pid);
 
+            //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
             if(hand.contains(Card.Function.Defuse)){
-                //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
                 hand.remove(Card.Function.Defuse);
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
+                currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
+            }else{
+                //玩家如果被炸死，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，不是末尾则当前玩家index保持不动
+                if (currentPlayerIndex == playerIds.size()-1){
+                    currentPlayerIndex = 0;
+                }
+
+                //玩家被炸死，将该玩家id从游戏中移除
+                playerIds.remove(pid);
+
+                //提示当前玩家出局
             }
-
-            //玩家被炸，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，不是末尾则当前玩家index保持不动
-            if (currentPlayerIndex == playerIds.size()-1){
-                currentPlayerIndex = 0;
-            }
-
-            //玩家被炸死，将该玩家id从游戏中移除
-            playerIds.remove(pid);
-
-            //提示当前玩家出局
-
         }else{
             getPlayerHand(pid).add(deck.drawCard());
             //移动当前玩家指针至下一位玩家
-            currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
+
         }
     }
 }
