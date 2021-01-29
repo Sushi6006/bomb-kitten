@@ -125,7 +125,7 @@ public class Game {
         }else{
             getPlayerHand(pid).add(deck.drawCard());
             //移动当前玩家指针至下一位玩家
-
+            currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
         }
     }
 }
