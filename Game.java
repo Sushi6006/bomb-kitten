@@ -91,6 +91,7 @@ public class Game {
         }
     }
 
+    
     //用于判断牌中是否有炸弹，与getTopCards组合使用
     public boolean gotBombed(ArrayList<Card> card) {
         return card.contains(Card.Cat.ExplodingKitten);
@@ -134,15 +135,50 @@ public class Game {
                 System.out.println(pid + "被炸死了！");
             }
         } else {
-            //如果顶部一张牌不是炸弹，则玩家从牌堆顶不抽取一张牌，结束当前回合
+            //如果顶部一张牌不是炸弹，则玩家从牌堆顶部抽取一张牌，结束当前回合
             getPlayerHand(pid).add(deck.drawCard());
             //移动当前玩家指针至下一位玩家
             currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
         }
     }
 
-    public void submitPlayerCard(String pid) throws InvalidPlayerTurnException {
+    //玩家出牌动作
+    //如玩家打出的牌为Shuffle，则将牌组重新洗牌
+    //如玩家打出的牌为Skip。则跳过自身当前回合
 
+    //如玩家打出的手牌为SeeTheFuture,则返回牌堆顶部三张牌的牌面信息
+    //如玩家打出的手牌为Nope，则无效化其他玩家所打出的牌(这tm该怎么实现。。。)
+    //如玩家打出的牌为Attack，则跳过自身当前回合并强制下一位玩家摸牌两次
+    //若玩家打出的牌为Favor，则玩家指定一名其他玩家给其一张牌
+    //若玩家打出的牌为两张相同的普通猫组合，则指定一名玩家抽取其一张手牌
+    //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
+    //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
+
+    public void submitPlayerCard(String pid, ArrayList<Card> cardPlay)
+            throws InvalidPlayerTurnException, InvalidCardPlayException {
+        //检查是否为当前玩家回合，nope的case需要单独考虑因为任何玩家都可以在任何时刻打出nope(还没有implement)
+        checkPlayerTurn(pid);
+
+        //获取当前回合玩家手牌信息
+        ArrayList<Card> hand = getPlayerHand(pid);
+
+        //如果打出的牌数量为1张，则说明打出的是功能牌
+        if (cardPlay.size() == 1) {
+            Card card = cardPlay.get(0);
+            if (card.getFunction() == Card.Function.Shuffle) {
+                deck.shuffle();
+            } else if (card.getFunction() == Card.Function.Skip) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+            }
+        }else if (cardPlay.size() == 2){
+            //打出的牌数量为2，说明打出的是两张猫猫牌
+
+        }else if (cardPlay.size() == 3){
+
+
+        }else if (cardPlay.size() == 5){
+
+        }
     }
 }
 
@@ -152,10 +188,20 @@ class InvalidPlayerTurnException extends Exception {
 
     public InvalidPlayerTurnException(String message, String pid) {
         super(message);
-        playerId = pid;
+        this.playerId = pid;
     }
 
     public String getPid() {
         return playerId;
     }
+}
+
+class InvalidCardPlayException extends Exception{
+    Card card;
+
+    public InvalidCardPlayException(String message, Card card){
+        super(message);
+        this.card = card;
+    }
+
 }
