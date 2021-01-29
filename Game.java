@@ -118,7 +118,7 @@ public class Game {
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
 
                 //玩家需要执行将炸弹放回牌堆的操作
-                
+
 
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
@@ -141,10 +141,14 @@ public class Game {
             currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
         }
     }
-}
+
+    public void submitPlayerCard(String pid) throws InvalidPlayerTurnException{
+
+    }
 
 
 
+    
 class InvalidPlayerTurnException extends Exception {
     String playerId;
 
