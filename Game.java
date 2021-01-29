@@ -43,7 +43,7 @@ public class Game {
         deck.shuffle();
         for (int i = 0; i < pids.size(); i++) {
             ArrayList<Card> hand = new ArrayList<Card>(Arrays.asList(deck.dealCard(4)));
-            hand.add(new Card(Card.Function.Defuse,Card.Cat.NotCat));
+            hand.add(new Card(Card.Function.Defuse, Card.Cat.NotCat));
             playerHand.add(hand);
         }
 
@@ -92,28 +92,28 @@ public class Game {
     }
 
     //用于判断牌中是否有炸弹，与getTopCards组合使用
-    public boolean gotBombed(ArrayList<Card> card){
+    public boolean gotBombed(ArrayList<Card> card) {
         return card.contains(Card.Cat.ExplodingKitten);
     }
 
     //用于玩家被炸并使用Defuse后将炸弹放回牌堆的操作
-    public void putBackBomb(Deck deck, int index){
+    public void putBackBomb(Deck deck, int index) {
 
     }
 
     //玩家摸牌动作
-    public void playerDraw(String pid) throws InvalidPlayerTurnException{
+    public void playerDraw(String pid) throws InvalidPlayerTurnException {
         //检查是否为当前玩家回合
         checkPlayerTurn(pid);
 
 
         //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
-        if(gotBombed(deck.getTopCards(1))){
+        if (gotBombed(deck.getTopCards(1))) {
             //获取当前回合玩家手牌信息
             ArrayList<Card> hand = getPlayerHand(pid);
 
             //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
-            if(hand.contains(Card.Function.Defuse)){
+            if (hand.contains(Card.Function.Defuse)) {
                 hand.remove(Card.Function.Defuse);
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
 
@@ -121,10 +121,10 @@ public class Game {
 
 
                 //移动当前玩家指针至下一位玩家
-                currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
-            }else{
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+            } else {
                 //玩家如果被炸死，判断当前玩家是否是最末位index，如果是则将当前玩家index调整为0，如不是末位则当前玩家index保持不动
-                if (currentPlayerIndex == playerIds.size()-1){
+                if (currentPlayerIndex == playerIds.size() - 1) {
                     currentPlayerIndex = 0;
                 }
 
@@ -134,21 +134,22 @@ public class Game {
                 //提示当前玩家出局，这个功能需要看gui怎么操作再来添加吧
 
             }
-        }else{
+        } else {
             //如果顶部一张牌不是炸弹，则玩家从牌堆顶不抽取一张牌，结束当前回合
             getPlayerHand(pid).add(deck.drawCard());
             //移动当前玩家指针至下一位玩家
-            currentPlayerIndex = (currentPlayerIndex +1) % playerIds.size();
+            currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
         }
     }
 
-    public void submitPlayerCard(String pid) throws InvalidPlayerTurnException{
+    public void submitPlayerCard(String pid) throws InvalidPlayerTurnException {
 
     }
 
+}
 
 
-    
+
 class InvalidPlayerTurnException extends Exception {
     String playerId;
 
