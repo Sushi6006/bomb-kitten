@@ -1,8 +1,10 @@
 package boot;
 
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 
@@ -57,14 +59,10 @@ public class Game {
             playerHand.add(hand);
         }
 
-
-        //System.out.println("player hand: " + playerHand);
-
         //放入炸弹，再次洗牌，游戏准备完毕。
         deck.addBomb();
         deck.shuffle();
 
-        //System.out.println(deck);
     }
 
     //当存活玩家为1名时游戏结束
@@ -89,6 +87,9 @@ public class Game {
         return playerHand.get(index);
     }
 
+    public Card getPlayerCard(ArrayList<Card> targetHand, int index) {
+        return targetHand.remove(index);
+    }
 
     //检查玩家是否还有手牌
     public boolean hasEmptyHand(String pid) {
@@ -109,6 +110,46 @@ public class Game {
         return card.contains(bomb);
     }
 
+    //判断玩家所出得牌是否为全部一样的猫猫牌
+    public boolean sameCatCard(ArrayList<Card> catCard){
+        Card sample = catCard.get(0);
+
+        //判断集合中的牌均为普通猫猫牌
+        for (Card card : catCard) {
+            if(card.getFunction() != Card.Function.NotFunction){
+                return false;
+            }
+        }
+
+        for (int i = 1; i < catCard.size(); i++) {
+            if(!sample.equals(catCard.get(i))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    //判断玩家所出得牌是否为全部一样的猫猫牌
+    public boolean differentCatCard(ArrayList<Card> catCard){
+        //判断集合中的牌均为普通猫猫牌
+        for (Card card : catCard) {
+            if(card.getFunction() != Card.Function.NotFunction){
+                return false;
+            }
+        }
+
+        //利用HashSet不允许存储重复元素的特点来判断catCard集合中的猫猫是否都是不同的品种
+        HashSet<Card> set = new HashSet<>();
+        for (Card card : catCard) {
+            set.add(card);
+        }
+
+        if(catCard.size() != set.size()){
+            return false;
+        }
+        return true;
+    }
 
     //玩家摸牌动作
     public void playerDraw(String pid) {
@@ -185,27 +226,19 @@ public class Game {
         }
     }
 
-    //玩家出牌动作
 
-    //如玩家打出的手牌为SeeTheFuture,则返回牌堆顶部三张牌的牌面信息
-    //如玩家打出的手牌为Nope，则无效化其他玩家所打出的牌(这tm该怎么实现。。。)
-
-    //若玩家打出的牌为Favor，则玩家指定一名其他玩家给其一张牌
-    //若玩家打出的牌为两张相同的普通猫组合，则指定一名玩家抽取其一张手牌
-    //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
-    //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
-
-    public void submitPlayerCard(String pid, ArrayList<Card> cardPlay)
-            throws InvalidPlayerTurnException{
+    //玩家出牌动作，抛出异常需要后续进行设置
+    public void submitPlayerCard(String pid, ArrayList<Card> cardPlay) {
         //检查是否为当前玩家回合，nope的case需要单独考虑因为任何玩家都可以在任何时刻打出nope(还没有implement)
-        checkPlayerTurn(pid);
+
 
         //获取当前回合玩家手牌信息
         ArrayList<Card> pHand = getPlayerHand(pid);
 
+        //如果打出的牌数量仅为一张且为功能牌
+        if (cardPlay.size() == 1 && cardPlay.get(0).getCat() == Card.Cat.NotCat) {
 
-        //如果打出的牌数量为1张，则说明打出的是功能牌
-        if (cardPlay.size() == 1) {
+            //获取功能牌牌面
             Card card = cardPlay.get(0);
 
             if (card.getFunction() == Card.Function.Shuffle) {
@@ -241,7 +274,7 @@ public class Game {
 
             } else if (card.getFunction() == Card.Function.Nope) {
                 pHand.remove(Card.Function.Nope);
-                
+
 
             } else if (card.getFunction() == Card.Function.Attack) {
                 pHand.remove(Card.Function.Attack);
@@ -261,6 +294,12 @@ public class Game {
                 //后期需要改成玩家输入的值
                 String targetPlayer = "alex";
 
+                //如目标玩家手牌不为空则指定目标玩家给出牌玩家一张牌
+                if (hasEmptyHand(targetPlayer)) {
+                    //如目标玩家手牌为空，指定玩家重新选择Favor目标
+                    System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+                }
+
                 //获取该目标玩家手牌信息
                 ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
 
@@ -271,14 +310,84 @@ public class Game {
                 pHand.add(targetHand.remove(targetChoice));
 
             }
-        } else if (cardPlay.size() == 2) {
-            //打出的牌数量为2，说明打出的是两张猫猫牌
 
-        } else if (cardPlay.size() == 3) {
+        } else if (cardPlay.size() == 2 && sameCatCard(cardPlay)) {
+            //若玩家打出的牌为两张相同的普通猫组合，则指定一名玩家抽取其一张手牌
+
+            //获取猫猫牌牌面
+            Card card = cardPlay.get(0);
+
+            //从手牌中移除两张打出的猫猫牌
+            for (int i = 0; i < 2; i++) {
+                pHand.remove(card);
+            }
+
+            //后期需要让玩家自己输入抽牌目标的id
+            String targetPlayer = "alex";
+
+            //如目标玩家手牌不为空则指定目标玩家给出牌玩家一张牌
+            if (hasEmptyHand(targetPlayer)) {
+                //如目标玩家手牌为空，指定玩家重新选择Favor目标
+                System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+            }
+
+            //获取该目标玩家手牌信息
+            ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
+
+            //后期需要改成玩家自己选定的卡片index，从target玩家处抽取加入自己手牌
+            pHand.add(getPlayerCard(targetHand, 0));
+
+        } else if (cardPlay.size() == 3 && sameCatCard(cardPlay)) {
+            //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
+
+            //获取猫猫牌牌面
+            Card card = cardPlay.get(0);
+
+            //从手牌中移除两张打出的猫猫牌
+            for (int i = 0; i < 3; i++) {
+                pHand.remove(card);
+            }
+
+            //后期需要让玩家自己输入所要牌的牌面
+            Card targetCard = new Card(Card.Function.Defuse, Card.Cat.NotCat);
+
+            //后期需要让玩家自己输入抽牌目标的id
+            String targetPlayer = "alex";
+
+            //获取该目标玩家手牌信息
+            ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
+
+            //如目标玩家手牌不为空则指定目标玩家给出牌玩家一张牌
+            if (hasEmptyHand(targetPlayer)) {
+                //如目标玩家手牌为空，指定玩家重新选择Favor目标
+                System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+
+                //重新选择代码
 
 
-        } else if (cardPlay.size() == 5) {
+            } else if (!targetHand.contains(targetCard)) {
+                //如目标玩家手牌中没有出牌玩家指定的牌，提示出牌玩家更换想要的牌
+                System.out.println("该玩家手牌中无" + targetCard + "请重新选择目标牌面");
 
+                //重新选择代码
+            }else{
+                //从目标玩家的手牌中拿取目标牌加入手牌
+                pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
+            }
+
+        } else if (cardPlay.size() == 5 && differentCatCard(cardPlay)) {
+            //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
+
+            //后期需要让玩家自己输入所要牌的牌面
+            Card targetCard = new Card(Card.Function.Defuse, Card.Cat.NotCat);
+
+            //如果弃牌堆内有targetCard，则删除弃牌堆内该牌并将之加入该玩家手牌
+            if(stockpile.remove(targetCard)){
+                pHand.add(targetCard);
+            }
+
+        } else {
+            //丢出InvalidCardPLayException需要后续实现
         }
     }
 
