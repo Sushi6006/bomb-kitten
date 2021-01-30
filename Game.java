@@ -107,10 +107,6 @@ public class Game {
         return card.contains(Card.Cat.ExplodingKitten);
     }
 
-    //用于玩家被炸并使用Defuse后将炸弹放回牌堆的操作
-    public void putBackBomb(Deck deck, int index) {
-
-    }
 
     //玩家摸牌动作
     public void playerDraw(String pid) throws InvalidPlayerTurnException {
@@ -139,7 +135,7 @@ public class Game {
                     hand.remove(Card.Function.Defuse);
                     stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
                     underAttack = false;
-                    
+
                 } else {
                     //将已翻开未爆炸的炸弹全部放回牌堆
                     for (int i = 0; i < bombNeededBack; i++) {
@@ -174,6 +170,12 @@ public class Game {
                 getPlayerHand(pid).add(deck.drawCard());
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+
+                //将已翻开未爆炸的炸弹全部放回牌堆
+                for (int i = 0; i < bombNeededBack; i++) {
+                    deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), 0);
+
+                }
             }
         }
     }
