@@ -115,4 +115,9 @@ public class Deck {
     public void insertBomb(Card bomb, int index) {
         cards.add(index, bomb);
     }
+
+    public boolean hasBomb(){
+        return cards.contains(Card.Cat.ExplodingKitten);
+    }
+
 }

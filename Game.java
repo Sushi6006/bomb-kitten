@@ -9,8 +9,8 @@ import java.util.Scanner;
 public class Game {
     private int currentPlayerIndex; //当前回合玩家index
     private ArrayList<String> playerIds; //存储玩家id
-    private Deck deck;
-    private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
+    private static Deck deck;
+    private static ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
     private LinkedList<Card> stockpile; //弃牌堆
     private boolean underAttack; //记录当前玩家是否被上家Attack
     private int bombNeededBack; //用于记录已翻开(被defuse抵消掉的)却未爆炸的炸弹数
@@ -22,8 +22,17 @@ public class Game {
         player.add("bob");
         player.add("charles");
         player.add("dan");
-        System.out.println(player);
+
         Game game = new Game(player);
+        while(deck.hasBomb()){
+            game.playerDraw("alex");
+            game.playerDraw("bob");
+            game.playerDraw("charles");
+            game.playerDraw("dan");
+        }
+        for (ArrayList<Card> hand : playerHand) {
+            System.out.println(hand);
+        }
     }
 
     public Game(ArrayList<String> pids) {
@@ -84,10 +93,6 @@ public class Game {
         return playerHand.get(index);
     }
 
-    //获取玩家手牌数
-    public int getPlayerHandSize(String pid) {
-        return getPlayerHand(pid).size();
-    }
 
     //检查玩家是否还有手牌
     public boolean hasEmptyHand(String pid) {
@@ -109,9 +114,9 @@ public class Game {
 
 
     //玩家摸牌动作
-    public void playerDraw(String pid) throws InvalidPlayerTurnException {
+    public void playerDraw(String pid){
         //检查是否为当前玩家回合
-        checkPlayerTurn(pid);
+        //checkPlayerTurn(pid);
 
         //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
         if (gotBombed(deck.getTopCards(1))) {
@@ -140,7 +145,6 @@ public class Game {
                     //将已翻开未爆炸的炸弹全部放回牌堆
                     for (int i = 0; i < bombNeededBack; i++) {
                         deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), 0);
-
                     }
 
                     //将未爆炸炸弹放入牌堆后，计数器清零
@@ -174,7 +178,6 @@ public class Game {
                 //将已翻开未爆炸的炸弹全部放回牌堆
                 for (int i = 0; i < bombNeededBack; i++) {
                     deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), 0);
-
                 }
             }
         }
@@ -196,7 +199,7 @@ public class Game {
         checkPlayerTurn(pid);
 
         //获取当前回合玩家手牌信息
-        ArrayList<Card> hand = getPlayerHand(pid);
+        ArrayList<Card> pHand = getPlayerHand(pid);
 
 
         //如果打出的牌数量为1张，则说明打出的是功能牌
@@ -204,26 +207,41 @@ public class Game {
             Card card = cardPlay.get(0);
 
             if (card.getFunction() == Card.Function.Shuffle) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.Shuffle);
+
                 //如玩家打出的牌为Shuffle，则将牌组重新洗牌
                 deck.shuffle();
+
+                //将该牌加入弃牌堆
                 stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
 
             } else if (card.getFunction() == Card.Function.Skip) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.Skip);
+
                 //如果是被上家Attack的状态下打出一张Skip则underAttack状态调整为false(剩余一次摸牌可以视作结束回合时的正常摸牌)
                 if (underAttack) {
                     stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
                     underAttack = false;
                 } else {
-                    //如玩家打出的牌为Skip。则跳过自身当前回合
+                    //如非underAttack状态下玩家打出的牌为Skip。则跳过自身当前回合
                     currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                     stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
                 }
 
             } else if (card.getFunction() == Card.Function.SeeTheFuture) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.SeeTheFuture);
 
             } else if (card.getFunction() == Card.Function.Nope) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.Nope);
 
             } else if (card.getFunction() == Card.Function.Attack) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.Attack);
+
                 //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                 stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
@@ -234,6 +252,9 @@ public class Game {
                 }
 
             } else if (card.getFunction() == Card.Function.Favor) {
+                //从玩家手牌中移除该牌
+                pHand.remove(Card.Function.Favor);
+
 
             }
         } else if (cardPlay.size() == 2) {
