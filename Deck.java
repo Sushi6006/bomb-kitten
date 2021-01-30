@@ -118,9 +118,6 @@ public class Deck {
         return ret;
     }
 
-    public int size(){
-        return cards.size();
-    }
 
     //将炸弹按指定位置插入牌堆
     public void insertBomb(Card bomb, int index) {

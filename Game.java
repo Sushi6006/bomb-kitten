@@ -4,7 +4,7 @@ package boot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.Scanner;
+
 
 public class Game {
     private int currentPlayerIndex; //当前回合玩家index
@@ -196,7 +196,7 @@ public class Game {
     //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
 
     public void submitPlayerCard(String pid, ArrayList<Card> cardPlay)
-            throws InvalidPlayerTurnException, InvalidCardPlayException {
+            throws InvalidPlayerTurnException{
         //检查是否为当前玩家回合，nope的case需要单独考虑因为任何玩家都可以在任何时刻打出nope(还没有implement)
         checkPlayerTurn(pid);
 
@@ -219,9 +219,7 @@ public class Game {
                 stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
 
             } else if (card.getFunction() == Card.Function.Skip) {
-                //从玩家手牌中移除该牌
                 pHand.remove(Card.Function.Skip);
-
                 //如果是被上家Attack的状态下打出一张Skip则underAttack状态调整为false(剩余一次摸牌可以视作结束回合时的正常摸牌)
                 if (underAttack) {
                     stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
@@ -233,15 +231,19 @@ public class Game {
                 }
 
             } else if (card.getFunction() == Card.Function.SeeTheFuture) {
-                //从玩家手牌中移除该牌
                 pHand.remove(Card.Function.SeeTheFuture);
 
+                //获取牌堆顶部三张牌面信息
+                ArrayList<Card> topThreeCards = deck.getTopCards(3);
+
+                //需要在gui向玩家输出三张牌的牌面信息
+                System.out.println(topThreeCards);
+
             } else if (card.getFunction() == Card.Function.Nope) {
-                //从玩家手牌中移除该牌
                 pHand.remove(Card.Function.Nope);
+                
 
             } else if (card.getFunction() == Card.Function.Attack) {
-                //从玩家手牌中移除该牌
                 pHand.remove(Card.Function.Attack);
 
                 //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
@@ -254,9 +256,19 @@ public class Game {
                 }
 
             } else if (card.getFunction() == Card.Function.Favor) {
-                //从玩家手牌中移除该牌
                 pHand.remove(Card.Function.Favor);
 
+                //后期需要改成玩家输入的值
+                String targetPlayer = "alex";
+
+                //获取该目标玩家手牌信息
+                ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
+
+                //后期需要改成目标玩家自选的牌的index
+                int targetChoice = 0;
+
+                //从目标玩家处获取一张目标玩家自选手牌加入自身牌组
+                pHand.add(targetHand.remove(targetChoice));
 
             }
         } else if (cardPlay.size() == 2) {
@@ -287,13 +299,3 @@ class InvalidPlayerTurnException extends Exception {
     }
 }
 
-//用于判断玩家在回合中所打出的牌是否符合规则
-class InvalidCardPlayException extends Exception {
-    Card card;
-
-    public InvalidCardPlayException(String message, Card card) {
-        super(message);
-        this.card = card;
-    }
-
-}
