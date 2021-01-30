@@ -1,5 +1,7 @@
 package boot;
 
+import java.util.Objects;
+
 public class Card {
     //所有功能牌
     enum Function {
@@ -45,5 +47,19 @@ public class Card {
             return "Card: " + cat;
         }
         return "Card: " + function;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Card card = (Card) o;
+        return function == card.function &&
+                cat == card.cat;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(function, cat);
     }
 }

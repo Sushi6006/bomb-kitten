@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class Game {
     private int currentPlayerIndex; //当前回合玩家index
-    private ArrayList<String> playerIds; //存储玩家id
+    private static ArrayList<String> playerIds; //存储玩家id
     private static Deck deck;
     private static ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
     private LinkedList<Card> stockpile; //弃牌堆
@@ -22,17 +22,8 @@ public class Game {
         player.add("bob");
         player.add("charles");
         player.add("dan");
-
         Game game = new Game(player);
-        while(deck.hasBomb()){
-            game.playerDraw("alex");
-            game.playerDraw("bob");
-            game.playerDraw("charles");
-            game.playerDraw("dan");
-        }
-        for (ArrayList<Card> hand : playerHand) {
-            System.out.println(hand);
-        }
+
     }
 
     public Game(ArrayList<String> pids) {
@@ -66,9 +57,14 @@ public class Game {
             playerHand.add(hand);
         }
 
+
+        //System.out.println("player hand: " + playerHand);
+
         //放入炸弹，再次洗牌，游戏准备完毕。
         deck.addBomb();
         deck.shuffle();
+
+        //System.out.println(deck);
     }
 
     //当存活玩家为1名时游戏结束
@@ -109,23 +105,29 @@ public class Game {
 
     //用于判断牌中是否有炸弹
     public boolean gotBombed(ArrayList<Card> card) {
-        return card.contains(Card.Cat.ExplodingKitten);
+        Card bomb = new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten);
+        return card.contains(bomb);
     }
 
 
     //玩家摸牌动作
-    public void playerDraw(String pid){
+    public void playerDraw(String pid) {
         //检查是否为当前玩家回合
         //checkPlayerTurn(pid);
 
+        //获取当前回合玩家手牌信息
+        ArrayList<Card> hand = getPlayerHand(pid);
+
         //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
         if (gotBombed(deck.getTopCards(1))) {
-            //获取当前回合玩家手牌信息
-            ArrayList<Card> hand = getPlayerHand(pid);
+
+            //用于接下来判断手牌中是否拥有炸弹的参考量
+            Card defuse = new Card(Card.Function.Defuse, Card.Cat.NotCat);
 
             //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
-            if (hand.contains(Card.Function.Defuse)) {
-                hand.remove(Card.Function.Defuse);
+            if (hand.contains(defuse)) {
+                //将玩家手中的defuse移入废牌堆
+                hand.remove(defuse);
                 stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
 
                 //将牌堆最上方的炸弹移除牌堆
@@ -134,11 +136,8 @@ public class Game {
                 //未爆弹计数器增加一
                 bombNeededBack++;
 
-                //如果该玩家在当前回合被攻击，牌堆顶部为炸弹且有defuse，则先将炸弹移出牌堆,将玩家手牌中的一张Defuse丢入弃牌堆，继续回合
+                //如玩家为underAttack状态，currentPlayerIndex保持不变
                 if (underAttack) {
-                    deck.drawCard();
-                    hand.remove(Card.Function.Defuse);
-                    stockpile.addLast(new Card(Card.Function.Defuse, Card.Cat.NotCat));
                     underAttack = false;
 
                 } else {
@@ -153,12 +152,15 @@ public class Game {
                     //移动当前玩家指针至下一位玩家
                     currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                 }
+
             } else {
                 //将牌堆最上方的炸弹移除牌堆
                 deck.drawCard();
 
                 //玩家被炸死，将该玩家id从游戏中移除
                 playerIds.remove(pid);
+
+                //由于被炸死玩家已被移除则直接用currentPlayerIndex与当前玩家数取模
                 currentPlayerIndex = currentPlayerIndex % playerIds.size();
 
                 //提示当前玩家出局，这个功能需要看gui怎么操作再来完善
@@ -167,11 +169,11 @@ public class Game {
         } else {
             //如果该玩家在当前回合被攻击，牌堆顶部不是炸弹，则摸一张牌后继续回合
             if (underAttack) {
-                getPlayerHand(pid).add(deck.drawCard());
+                hand.add(deck.drawCard());
                 underAttack = false;
             } else {
                 //如果顶部一张牌不是炸弹，则玩家从牌堆顶部抽取一张牌，结束当前回合
-                getPlayerHand(pid).add(deck.drawCard());
+                hand.add(deck.drawCard());
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
 

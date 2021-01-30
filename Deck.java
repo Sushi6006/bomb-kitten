@@ -41,7 +41,14 @@ public class Deck {
         }
 
         //将所有普通猫加入牌组，各有四张
-        Card.Cat[] cats = Card.Cat.values();
+        Card.Cat[] cats = new Card.Cat[]{
+                Card.Cat.BeardCat,
+                Card.Cat.Cattermelon,
+                Card.Cat.HairyPotatoCat,
+                Card.Cat.TacoCat,
+                Card.Cat.RainbowRalphingCat
+        };
+
         for (Card.Cat cat : cats) {
             for (int j = 0; j < 4; j++) {
                 //将其余功能牌(除Defuse/ExplodingKitten)加入牌组，每种四张
@@ -111,13 +118,17 @@ public class Deck {
         return ret;
     }
 
+    public int size(){
+        return cards.size();
+    }
+
     //将炸弹按指定位置插入牌堆
     public void insertBomb(Card bomb, int index) {
         cards.add(index, bomb);
     }
 
-    public boolean hasBomb(){
-        return cards.contains(Card.Cat.ExplodingKitten);
+    @Override
+    public String toString() {
+        return "deck: " + cards + cards.size() + " cards in the deck";
     }
-
 }
