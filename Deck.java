@@ -86,7 +86,7 @@ public class Deck {
 
     //从牌堆顶抽取一张牌
     public Card drawCard() {
-        return cards.removeLast();
+        return cards.removeFirst();
     }
 
 
@@ -104,7 +104,7 @@ public class Deck {
 
     //用于获取牌堆上方n张牌的牌面信息
     public ArrayList<Card> getTopCards(int n) {
-        ArrayList<Card> ret = new ArrayList<Card>();
+        ArrayList<Card> ret = new ArrayList();
 
         //如果牌堆内剩余牌的数量少于n张牌，则获取牌堆内全部牌面信息
         if (cards.size() < n) {
@@ -112,8 +112,8 @@ public class Deck {
                 ret.add(cards.get(cards.size() - i));
             }
         } else {
-            for (int i = 1; i <= n; i++) {
-                ret.add(cards.get(cards.size() - i));
+            for (int i = 0; i < n; i++) {
+                ret.add(cards.get(i));
             }
         }
         return ret;

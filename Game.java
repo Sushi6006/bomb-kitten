@@ -170,6 +170,7 @@ public class Game {
 
     //玩家摸牌动作
     public void drawCard(String pid) {
+        System.out.println(deck.toString());
         //获取当前回合玩家手牌信息
         ArrayList<Card> hand = getPlayerHand(pid);
 
@@ -217,12 +218,13 @@ public class Game {
             } else {
                 hand.add(deck.drawCard());
             }
+            System.out.println(pid + "抽取: " +getPlayerHand(pid).get(getPlayerHand(pid).size()-1));
         }
 
         if (bombNeededBack > 0) {
             //将已翻开未爆炸的炸弹全部放回牌堆
             Scanner sc = new Scanner(System.in);
-            System.out.println("输入想将炸弹放入的位置，范围从下至上为1 - " + deck.sizeOf());
+            System.out.print("输入想将炸弹放入的位置，范围从上至上为1 - " + (deck.sizeOf()+1) + ": ");
             int index = sc.nextInt() - 1;
 
             while (index < 0 || index > deck.sizeOf()) {
@@ -238,11 +240,11 @@ public class Game {
             bombNeededBack = 0;
         }
 
-        System.out.println(pid + "当前手牌: " + getPlayerHand(pid));
+
+        System.out.print(pid + "当前手牌: " + getPlayerHand(pid));
 
         //移动当前玩家指针至下一位玩家
         currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-        System.out.print(pid + "结束回合，轮到" + getCurrentPlayer() + "回合");
         System.out.println();
 
     }
@@ -253,12 +255,12 @@ public class Game {
         int cardIndex;
 
         //打印玩家手牌供玩家选择
-        System.out.println(pid + ": " + getPlayerHand(pid).toString());
-        System.out.println(pid + "请选择您想要打出的牌(左起第一张为1)，输入0结束选择");
+        System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
+        System.out.println(" 请选择您想要打出的牌(左起第一张为1)，输入0结束选择");
 
 
         while (getPlayerHand(pid).size() > 0) {
-            System.out.print("输入牌面index: ");
+            System.out.print("选择: ");
 
             //计算机判定左起第一位是0，所以玩家的输入需要手动减1
             cardIndex = sc.nextInt() - 1;
