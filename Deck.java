@@ -16,11 +16,12 @@ public class Deck {
 
     //配置牌组
     public void prepareDeck() {
-        //将SeeTheFuture与Nope加入牌组，每种五张
+        //准备eeTheFuture与Nope
         Card.Function[] functionWithFiveCards = new Card.Function[]{
                 Card.Function.SeeTheFuture,
                 Card.Function.Nope
         };
+        //将SeeTheFuture与Nope加入牌组，每种五张
         for (Card.Function function : functionWithFiveCards) {
             for (int j = 0; j < 5; j++) {
                 cards.addLast(new Card(function, Card.Cat.NotCat));
@@ -122,6 +123,10 @@ public class Deck {
     //将炸弹按指定位置插入牌堆
     public void insertBomb(Card bomb, int index) {
         cards.add(index, bomb);
+    }
+
+    public int sizeOf(){
+        return cards.size();
     }
 
     @Override
