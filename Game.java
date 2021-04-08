@@ -89,6 +89,7 @@ public class Game {
             System.out.println("牌组剩余" + this.deck.sizeOf() + "张牌");
             System.out.println();
         }
+        System.out.println(playerIds.get(0) + "获得了胜利！");
     }
 
     //当存活玩家为1名时游戏结束
@@ -170,17 +171,20 @@ public class Game {
 
     //玩家摸牌动作
     public void drawCard(String pid) {
-        System.out.println(deck.toString());
         //获取当前回合玩家手牌信息
         ArrayList<Card> hand = getPlayerHand(pid);
 
         //检查牌堆顶一张牌是否是炸弹，如果是炸弹则判断玩家手牌中是否有Defuse
         if (gotBombed(deck.getTopCards(1))) {
+            //摸到炸弹的情况
             System.out.println(pid + "摸到了炸弹");
 
             //如果当前玩家手牌中有Defuse则删除一张手牌中的Defuse并放入弃牌堆
             Card defuse = new Card(Card.Function.Defuse, Card.Cat.NotCat);
+
             if (hand.contains(defuse)) {
+                //没被炸死的情况
+
                 //将玩家手中的defuse移入废牌堆
                 hand.remove(defuse);
                 this.stockpile.add(defuse);
@@ -194,9 +198,30 @@ public class Game {
                 //如玩家为underAttack状态，currentPlayerIndex保持不变
                 if (underAttack) {
                     underAttack = false;
+                }else{
+                    //将已翻开未爆炸的炸弹全部放回牌堆
+                    Scanner sc = new Scanner(System.in);
+                    System.out.println("需要放回" + bombNeededBack + "张炸弹");
+                    for (int i = 0; i < bombNeededBack; i++) {
+                        System.out.print("放回第" + i + "张炸弹, ");
+                        System.out.print("输入想将炸弹放入的位置，范围从上至上为1 - " + (deck.sizeOf() + 1) + ": ");
+
+                        int index = sc.nextInt() - 1;
+
+                        while (index < 0 || index > deck.sizeOf()) {
+                            //丢出异常,提示重新输入
+                            index = sc.nextInt();
+                        }
+                        this.deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), index);
+                        bombNeededBack = 0;
+                        //移动当前玩家指针至下一位玩家
+                        currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                    }
                 }
 
             } else {
+                //被炸死的情况
+
                 //将牌堆最上方的炸弹移除牌堆
                 deck.drawCard();
 
@@ -211,46 +236,27 @@ public class Game {
 
             }
         } else {
-            //如果该玩家在当前回合被攻击，牌堆顶部不是炸弹，则摸一张牌后继续回合
+            //没摸到炸弹的情况
             if (underAttack) {
+                //如果没摸到炸弹，且该玩家在当前回合被攻击，则摸一张牌后继续回合
                 hand.add(deck.drawCard());
                 underAttack = false;
             } else {
+                //没有被攻击则摸一张牌结束回合
                 hand.add(deck.drawCard());
+                //移动当前玩家指针至下一位玩家
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
             }
-            System.out.println(pid + "抽取: " +getPlayerHand(pid).get(getPlayerHand(pid).size()-1));
+            System.out.println(pid + "抽取: " + getPlayerHand(pid).get(getPlayerHand(pid).size() - 1));
         }
 
-        if (bombNeededBack > 0) {
-            //将已翻开未爆炸的炸弹全部放回牌堆
-            Scanner sc = new Scanner(System.in);
-            System.out.print("输入想将炸弹放入的位置，范围从上至上为1 - " + (deck.sizeOf()+1) + ": ");
-            int index = sc.nextInt() - 1;
-
-            while (index < 0 || index > deck.sizeOf()) {
-                //丢出异常,提示重新输入
-                index = sc.nextInt();
-            }
-
-            for (int i = 0; i < bombNeededBack; i++) {
-                this.deck.insertBomb(new Card(Card.Function.NotFunction, Card.Cat.ExplodingKitten), index);
-            }
-
-            //将未爆炸炸弹放入牌堆后，计数器清零
-            bombNeededBack = 0;
-        }
-
-
-        System.out.print(pid + "当前手牌: " + getPlayerHand(pid));
-
-        //移动当前玩家指针至下一位玩家
-        currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
         System.out.println();
 
     }
 
     //玩家选择要出的牌
     public void selectCard(String pid) {
+        System.out.println("被攻击状态: " + gotNoped);
         Scanner sc = new Scanner(System.in);
         int cardIndex;
 
@@ -291,7 +297,7 @@ public class Game {
             Card card = this.selectedCard.get(0);
 
             if (card.getFunction().equals(Card.Function.Shuffle)) {
-                System.out.println(pid + "打出: Shuffle");
+                System.out.println(pid + "打出: Shuffle，牌堆洗牌");
 
                 //在结算功能牌前先询问其他玩家是否nope
                 anyOneNope(pid);
