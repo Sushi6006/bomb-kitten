@@ -201,6 +201,7 @@ public class Game {
             }
             selectedCard.addAll(selectedSet);
             playCard(pid);
+            selectedSet.clear();
             selectedCard.clear();
 
             if (canDraw) {
