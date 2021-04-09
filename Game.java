@@ -201,6 +201,7 @@ public class Game {
             }
             selectedCard.addAll(selectedSet);
             playCard(pid);
+            System.out.println("剩余手牌: " + getPlayerHand(pid));
             selectedSet.clear();
             selectedCard.clear();
 
@@ -239,6 +240,8 @@ public class Game {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
                 }
+                //从手牌中移除打出的牌
+                getPlayerHand(pid).removeAll(selectedCard);
                 //将该牌加入弃牌堆
                 stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
 
