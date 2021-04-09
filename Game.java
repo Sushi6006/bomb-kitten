@@ -5,6 +5,7 @@ import java.util.*;
 
 public class Game {
     private int currentPlayerIndex; //当前回合玩家index
+    private int bombNeededBack; //用于记录已翻开(被defuse抵消掉的)却未爆炸的炸弹数
     private ArrayList<String> playerIds; //存储玩家id
     private Deck deck;
     private ArrayList<ArrayList<Card>> playerHand; //所有玩家手牌
@@ -12,7 +13,7 @@ public class Game {
     private ArrayList<Card> stockpile; //弃牌堆
     private boolean underAttack; //记录当前玩家是否被上家Attack
     private boolean gotNoped; //用于判断当前出牌是否被nope
-    private int bombNeededBack; //用于记录已翻开(被defuse抵消掉的)却未爆炸的炸弹数
+    private boolean canDraw; //用于判断当前玩家是否可以摸牌
 
 
     public static void main(String[] args) {
@@ -55,6 +56,9 @@ public class Game {
         //记录当前出牌是否被nope
         gotNoped = false;
 
+        //记录当前回合是否可以摸牌
+        canDraw = true;
+
         //记录当前回合有多少炸弹需要被放回牌堆
         bombNeededBack = 0;
 
@@ -85,7 +89,6 @@ public class Game {
         while (!isGameOver()) {
             System.out.println(getCurrentPlayer() + "回合");
             selectCard(getCurrentPlayer());
-            playCard(getCurrentPlayer());
             System.out.println("牌组剩余" + this.deck.sizeOf() + "张牌");
             System.out.println();
         }
@@ -114,7 +117,7 @@ public class Game {
     }
 
     public Card getPlayerCard(ArrayList<Card> targetHand, int index) {
-        return targetHand.remove(index);
+        return targetHand.get(index);
     }
 
     //检查玩家是否还有手牌
@@ -171,29 +174,40 @@ public class Game {
 
     //玩家选择要出的牌
     public void selectCard(String pid) {
-        Scanner sc = new Scanner(System.in);
-        int cardIndex;
+        this.canDraw = false;
+        HashSet<Card> selectedSet = new HashSet<>(selectedCard);
+        boolean keepGoing = true;
 
         //打印玩家手牌供玩家选择
         System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
-        System.out.println(" 请选择您想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束选择。");
+        System.out.println(" 请选择您本轮想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
 
-
-        while (getPlayerHand(pid).size() > 0) {
-            System.out.print("选择想出的牌: ");
-
-            //计算机判定左起第一位是0，所以玩家的输入需要手动减1
-            cardIndex = sc.nextInt() - 1;
-
-            if (cardIndex < getPlayerHand(pid).size() && cardIndex > -1) {
-                this.selectedCard.add(getPlayerCard(getPlayerHand(pid), cardIndex));
-            } else if (cardIndex == -1) {
-                break;
-            } else {
-                System.out.println("手牌index越界");
+        while (keepGoing && getPlayerHand(pid).size() > 0) {
+            System.out.print("输入指令: ");
+            Scanner sc = new Scanner(System.in).useDelimiter(" *");
+            while (sc.hasNextInt()) {
+                int index = sc.nextInt() - 1;
+                if (index < getPlayerHand(pid).size() && index > -1) {
+                    //计算机判定左起第一位是0，所以玩家的输入需要手动减1
+                    selectedSet.add(getPlayerCard(getPlayerHand(pid), index));
+                } else if (index == -1) {
+                    keepGoing = false;
+                    this.canDraw = true;
+                    break;
+                } else {
+                    System.out.println("手牌index越界,重新输入");
+                    continue;
+                }
             }
+            selectedCard.addAll(selectedSet);
+            playCard(pid);
+            selectedCard.clear();
 
+            if (canDraw) {
+                drawCard(pid);
+            }
         }
+
     }
 
 
@@ -227,9 +241,6 @@ public class Game {
                 //将该牌加入弃牌堆
                 stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
 
-                //玩家抽牌结束这一回合
-                drawCard(pid);
-
             } else if (card.getFunction().equals(Card.Function.Skip)) {
                 System.out.println(pid + "打出: Skip");
                 anyOneNope(pid);
@@ -244,11 +255,13 @@ public class Game {
                         currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                     }
                     System.out.println(pid + "跳过本回合");
+                    canDraw = false;
                 } else {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
                 }
 
+                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.SeeTheFuture)) {
@@ -266,8 +279,8 @@ public class Game {
                     gotNoped = false;
                 }
 
+                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.SeeTheFuture, Card.Cat.NotCat));
-                drawCard(pid);
 
             } else if (card.getFunction().equals(Card.Function.Attack)) {
                 System.out.println(pid + "打出: Attack");
@@ -277,15 +290,16 @@ public class Game {
                     if (!underAttack) {
                         this.underAttack = true;
                     }
+                    System.out.println(pid + "跳过本回合");
+                    canDraw = false;
                 } else {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
-                    drawCard(pid);
                 }
 
                 //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-
+                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.Favor)) {
@@ -318,6 +332,8 @@ public class Game {
                     if (targetChoice < targetHand.size() && targetChoice >= 0) {
                         //从目标玩家处获取一张目标玩家自选手牌加入自身牌组
                         pHand.add(targetHand.remove(targetChoice));
+
+                        getPlayerHand(pid).removeAll(selectedCard);
                         stockpile.add(new Card(Card.Function.Favor, Card.Cat.NotCat));
                     } else {
                         //丢出有关index的exception
@@ -326,9 +342,8 @@ public class Game {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
                 }
-                drawCard(pid);
-            }
 
+            }
 
         } else if (this.selectedCard.size() == 2 && sameCatCard(this.selectedCard)) {
             //若玩家打出的牌为两张相同的普通猫组合，则指定一名玩家抽取其一张手牌
@@ -366,8 +381,9 @@ public class Game {
                     //从目标玩家处抽取一张手牌加入自身牌组
                     pHand.add(getPlayerCard(getPlayerHand(targetPlayer), targetChoice));
 
-                    for (int i = 0; i < 2; i++) {
-                        stockpile.add(new Card(Card.Function.NotFunction, card.getCat()));
+                    getPlayerHand(pid).removeAll(selectedCard);
+                    for (Card cat : selectedCard) {
+                        stockpile.add(cat);
                     }
 
                 } else {
@@ -377,8 +393,6 @@ public class Game {
                 System.out.println("被nope出牌无效");
                 gotNoped = false;
             }
-
-            drawCard(pid);
 
         } else if (this.selectedCard.size() == 3 && sameCatCard(this.selectedCard)) {
             //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
@@ -419,12 +433,15 @@ public class Game {
 
             if (!gotNoped) {
                 pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
+                getPlayerHand(pid).removeAll(selectedCard);
+
+                for (Card cat : selectedCard) {
+                    stockpile.add(cat);
+                }
             } else {
                 System.out.println("被nope出牌无效");
                 gotNoped = false;
             }
-
-            drawCard(pid);
 
         } else if (this.selectedCard.size() == 5 && differentCatCard(this.selectedCard)) {
             //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
@@ -443,6 +460,11 @@ public class Game {
 
             if (!gotNoped) {
                 //如果弃牌堆内有targetCard，则删除弃牌堆内该牌并将之加入该玩家手牌
+                getPlayerHand(pid).removeAll(selectedCard);
+
+                for (Card cat : selectedCard) {
+                    stockpile.add(cat);
+                }
                 stockpile.remove(targetCard);
                 pHand.add(targetCard);
             } else {
@@ -450,14 +472,12 @@ public class Game {
                 gotNoped = false;
             }
 
-        } else {
-            //如不出牌则直接摸牌
-            drawCard(pid);
-            //丢出InvalidCardPLayException需要后续实现
-        }
+        } else if (selectedCard.size() == 0) {
 
-        //当前玩家出牌结束后清空selectedCard并重制gotNoped
-        selectedCard.clear();
+        } else {
+            //丢出InvalidCardPLayException需要后续实现
+            System.out.println("无效组合，请重新选择出牌组合");
+        }
     }
 
     //玩家摸牌动作
