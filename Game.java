@@ -110,7 +110,7 @@ public class Game {
 
     //获取玩家手牌信息
     public ArrayList<Card> getPlayerHand(String pid) {
-        return playerHand.get(this.currentPlayerIndex);
+        return playerHand.get(playerIds.indexOf(pid));
     }
 
     public Card getPlayerCard(ArrayList<Card> targetHand, int index) {
@@ -171,17 +171,16 @@ public class Game {
 
     //玩家选择要出的牌
     public void selectCard(String pid) {
-        System.out.println("被攻击状态: " + this.underAttack);
         Scanner sc = new Scanner(System.in);
         int cardIndex;
 
         //打印玩家手牌供玩家选择
-        System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
-        System.out.println(" 请选择您想要打出的牌(左起第一张为1)，输入0结束选择");
+        System.out.println(pid + "手牌: " + getPlayerHand(pid).toString());
+        System.out.println(" 请选择您想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束选择");
 
 
         while (getPlayerHand(pid).size() > 0) {
-            System.out.print("选择: ");
+            System.out.print("选择想出的牌: ");
 
             //计算机判定左起第一位是0，所以玩家的输入需要手动减1
             cardIndex = sc.nextInt() - 1;
@@ -193,8 +192,6 @@ public class Game {
             } else {
                 System.out.println("手牌index越界");
             }
-
-
 
         }
     }
@@ -221,7 +218,6 @@ public class Game {
                     //如果没有被nope，则发动效果
                     //如玩家打出的牌为Shuffle，则将牌组重新洗牌
                     deck.shuffle();
-
                 } else {
                     //如果被nope了，则重置nope状态
                     System.out.println("被nope出牌无效");
@@ -234,7 +230,7 @@ public class Game {
                 drawCard(pid);
 
             } else if (card.getFunction().equals(Card.Function.Skip)) {
-                System.out.println(pid + "打出: Skip");
+                System.out.println(pid + "打出: Skip跳过本回合");
                 anyOneNope(pid);
 
                 if (!gotNoped) {
@@ -245,7 +241,6 @@ public class Game {
                     } else {
                         //如非underAttack状态下玩家打出的牌为Skip。则跳过自身当前回合
                         currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-                        System.out.println(pid + "跳过当前回合");
                     }
                 } else {
                     System.out.println("被nope出牌无效");
@@ -255,6 +250,7 @@ public class Game {
                 stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.SeeTheFuture)) {
+                System.out.println(deck);
                 System.out.println(pid + "打出: SeeTheFuture");
                 anyOneNope(pid);
 
@@ -295,7 +291,7 @@ public class Game {
                 if (!gotNoped) {
                     Scanner sc = new Scanner(System.in);
 
-                    System.out.println("请输入想要调情的对象id");
+                    System.out.print("请输入想要调情的对象id: ");
                     String targetPlayer = sc.next();
 
                     //如目标玩家手牌为空则当前玩家重新选择调情目标
@@ -308,8 +304,9 @@ public class Game {
                     //获取该目标玩家手牌信息
                     ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
 
-                    //需要让目标玩家选择index(还未想好怎么实现)
-                    System.out.println("输入想选择牌的index，左起第一张为1");
+                    //对目标玩家的屏幕输出
+                    System.out.println(targetPlayer + "请选择一张手牌: " + getPlayerHand(targetPlayer));
+                    System.out.print("输入想选择牌的index，左起第一张为1: ");
 
                     //玩家输入选择的牌面index
                     int targetChoice = sc.nextInt() - 1;
@@ -317,7 +314,6 @@ public class Game {
                     if (targetChoice < targetHand.size() && targetChoice >= 0) {
                         //从目标玩家处获取一张目标玩家自选手牌加入自身牌组
                         pHand.add(targetHand.remove(targetChoice));
-
                         stockpile.add(new Card(Card.Function.Favor, Card.Cat.NotCat));
                     } else {
                         //丢出有关index的exception
@@ -525,11 +521,12 @@ public class Game {
                 underAttack = false;
             } else {
                 //没有被攻击则摸一张牌结束回合
+                System.out.print(pid + "抽取: " + deck.getTopCards(1));
                 hand.add(deck.drawCard());
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
             }
-            System.out.println(pid + "抽取: " + getPlayerHand(pid).get(getPlayerHand(pid).size() - 1));
+
         }
 
         System.out.println();
