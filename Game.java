@@ -135,18 +135,18 @@ public class Game {
     }
 
     //判断玩家所出得牌是否为全部一样的猫猫牌
-    public boolean sameCatCard(ArrayList<Card> catCard) {
-        Card sample = catCard.get(0);
+    public boolean sameCatCard(ArrayList<Card> cards) {
+        Card sample = cards.get(0);
 
         //判断集合中的牌均为普通猫猫牌
-        for (Card card : catCard) {
+        for (Card card : cards) {
             if (!card.getFunction().equals(Card.Function.NotFunction)) {
                 return false;
             }
         }
 
-        for (int i = 1; i < catCard.size(); i++) {
-            if (!sample.equals(catCard.get(i))) {
+        for (int i = 1; i < cards.size(); i++) {
+            if (!sample.equals(cards.get(i))) {
                 return false;
             }
         }
@@ -175,8 +175,8 @@ public class Game {
         int cardIndex;
 
         //打印玩家手牌供玩家选择
-        System.out.println(pid + "手牌: " + getPlayerHand(pid).toString());
-        System.out.println(" 请选择您想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束选择");
+        System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
+        System.out.println(" 请选择您想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束选择。");
 
 
         while (getPlayerHand(pid).size() > 0) {
@@ -209,7 +209,7 @@ public class Game {
             Card card = this.selectedCard.get(0);
 
             if (card.getFunction().equals(Card.Function.Shuffle)) {
-                System.out.println(pid + "打出: Shuffle，牌堆洗牌");
+                System.out.println(pid + "打出: Shuffle");
 
                 //在结算功能牌前先询问其他玩家是否nope
                 anyOneNope(pid);
@@ -217,6 +217,7 @@ public class Game {
                 if (!gotNoped) {
                     //如果没有被nope，则发动效果
                     //如玩家打出的牌为Shuffle，则将牌组重新洗牌
+                    System.out.println("牌堆洗牌");
                     deck.shuffle();
                 } else {
                     //如果被nope了，则重置nope状态
@@ -230,7 +231,7 @@ public class Game {
                 drawCard(pid);
 
             } else if (card.getFunction().equals(Card.Function.Skip)) {
-                System.out.println(pid + "打出: Skip跳过本回合");
+                System.out.println(pid + "打出: Skip");
                 anyOneNope(pid);
 
                 if (!gotNoped) {
@@ -242,6 +243,7 @@ public class Game {
                         //如非underAttack状态下玩家打出的牌为Skip。则跳过自身当前回合
                         currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                     }
+                    System.out.println(pid + "跳过本回合");
                 } else {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
@@ -250,7 +252,6 @@ public class Game {
                 stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.SeeTheFuture)) {
-                System.out.println(deck);
                 System.out.println(pid + "打出: SeeTheFuture");
                 anyOneNope(pid);
 
@@ -272,15 +273,18 @@ public class Game {
                 System.out.println(pid + "打出: Attack");
                 anyOneNope(pid);
                 if (!gotNoped) {
-                    //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
-                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                     //如打出Attack时自身没有被施加underAttack状态，则将下一位玩家的underAttack状态调整为true
                     if (!underAttack) {
                         this.underAttack = true;
                     }
                 } else {
                     System.out.println("被nope出牌无效");
+                    gotNoped = false;
+                    drawCard(pid);
                 }
+
+                //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
+                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
 
                 stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
 
@@ -305,8 +309,8 @@ public class Game {
                     ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
 
                     //对目标玩家的屏幕输出
-                    System.out.println(targetPlayer + "请选择一张手牌: " + getPlayerHand(targetPlayer));
-                    System.out.print("输入想选择牌的index，左起第一张为1: ");
+                    System.out.println(targetPlayer + ", 请选择一张手牌: " + getPlayerHand(targetPlayer));
+                    System.out.print("输入想选择牌的index 1 - " + getPlayerHand(targetPlayer).size() + ": ");
 
                     //玩家输入选择的牌面index
                     int targetChoice = sc.nextInt() - 1;
@@ -320,6 +324,7 @@ public class Game {
                     }
                 } else {
                     System.out.println("被nope出牌无效");
+                    gotNoped = false;
                 }
                 drawCard(pid);
             }
@@ -370,6 +375,7 @@ public class Game {
                 }
             } else {
                 System.out.println("被nope出牌无效");
+                gotNoped = false;
             }
 
             drawCard(pid);
@@ -413,6 +419,9 @@ public class Game {
 
             if (!gotNoped) {
                 pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
+            } else {
+                System.out.println("被nope出牌无效");
+                gotNoped = false;
             }
 
             drawCard(pid);
@@ -432,10 +441,14 @@ public class Game {
 
             Card targetCard = wantCard(targetCardIndex, this.stockpile);
 
-            //如果弃牌堆内有targetCard，则删除弃牌堆内该牌并将之加入该玩家手牌
-            stockpile.remove(targetCard);
-            pHand.add(targetCard);
-
+            if (!gotNoped) {
+                //如果弃牌堆内有targetCard，则删除弃牌堆内该牌并将之加入该玩家手牌
+                stockpile.remove(targetCard);
+                pHand.add(targetCard);
+            } else {
+                System.out.println("被nope出牌无效");
+                gotNoped = false;
+            }
 
         } else {
             //如不出牌则直接摸牌
@@ -476,7 +489,7 @@ public class Game {
                 //如玩家为underAttack状态，currentPlayerIndex保持不变
                 if (underAttack) {
                     underAttack = false;
-                }else{
+                } else {
                     //将已翻开未爆炸的炸弹全部放回牌堆
                     Scanner sc = new Scanner(System.in);
                     System.out.println("需要放回" + bombNeededBack + "张炸弹");
@@ -521,7 +534,6 @@ public class Game {
                 underAttack = false;
             } else {
                 //没有被攻击则摸一张牌结束回合
-                System.out.print(pid + "抽取: " + deck.getTopCards(1));
                 hand.add(deck.drawCard());
                 //移动当前玩家指针至下一位玩家
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
@@ -536,17 +548,21 @@ public class Game {
     public void anyOneNope(String pid) {
         Scanner input = new Scanner(System.in);
         boolean playedNope = false;
+        String currentPlay = null;
         int notWish = 0;
 
         do {
             for (String player : this.playerIds) {
-                if (!player.equals(pid) && getPlayerHand(player).contains(Card.Function.Nope)) {
+                if (!player.equals(pid)
+                        && getPlayerHand(player).contains(new Card(Card.Function.Nope, Card.Cat.NotCat))
+                        && !player.equals(currentPlay)) {
                     //如玩家手牌有nope则询问玩家是否希望打出。应只对此玩家的console输出而不是对全部玩家的console输出(需要后续实现)
-                    System.out.println("Enter 1 if you want to play nope, 0 if not");
+                    System.out.print(player + ", 输入1如果你希望打出NOPE，输入0如果你不希望打出NOPE: ");
 
                     if (input.nextInt() == 1) {
-                        System.out.println(player + "打出Nope");
+                        System.out.print(player + "打出Nope, ");
 
+                        currentPlay = player;
                         //记录有玩家打出nope
                         playedNope = true;
 
@@ -561,7 +577,8 @@ public class Game {
                         } else {
                             System.out.println(pid + "当前出牌为正常状态");
                         }
-
+                        //只要有一位玩家打出false，本轮判定直接结束
+                        break;
                     } else {
                         //如果该玩家不想打出nope则notwish标记加一
                         notWish++;
@@ -575,14 +592,13 @@ public class Game {
                 //如果所有玩家都不想打出nope则终止询问
                 break;
             }
-            //每进行完一轮完整的判定清零notwish。
             notWish = 0;
         } while (playedNope); //只要有玩家打出nope就重新进行新一轮的判定
     }
 
     public void playNope(String pid) {
         //确定玩家手牌中nope的index
-        int nopeIndex = getPlayerHand(pid).indexOf(Card.Function.Nope);
+        int nopeIndex = getPlayerHand(pid).indexOf(new Card(Card.Function.Nope, Card.Cat.NotCat));
 
         //调用方法从pid手牌中移除一张Nope
         getPlayerCard(getPlayerHand(pid), nopeIndex);
