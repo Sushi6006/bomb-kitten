@@ -184,8 +184,8 @@ public class Game {
         outerLoop:
         while (getPlayerHand(pid).size() > 0) {
             //打印玩家手牌供玩家选择
-            System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
-            System.out.println(" 请选择您本轮想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
+            System.out.print(pid + "当前手牌: " + getPlayerHand(pid).toString());
+            System.out.println(" 请选择您想要打出的牌, 从左至右" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
             System.out.print("输入指令: ");
 
             //读入玩家输入的所有指令(兼容一行内选择多张卡片)
@@ -210,6 +210,10 @@ public class Game {
             if (!selectedCard.isEmpty()) {
                 playCard(pid);
 
+                //清空手牌中所有占位null值,清空selectedCard缓存
+                getPlayerHand(pid).removeAll(Collections.singleton(null));
+                selectedCard.clear();
+
                 if (!canDraw) {
                     //如果所选牌面结算后抽牌状态为false则说明打出skip/attack，则终止选牌
                     break;
@@ -218,9 +222,7 @@ public class Game {
                     invalidCardPlay = false;
                     continue;
                 }
-                //清空手牌中所有占位null值
-                getPlayerHand(pid).removeAll(Collections.singleton(null));
-                selectedCard.clear();
+
             }
         }
 
@@ -295,7 +297,7 @@ public class Game {
                     //需要在gui向玩家输出三张牌的牌面信息
                     System.out.println("顶部三张牌: " + topThreeCards);
                 } else {
-                    System.out.println("被nope看不到了");
+                    System.out.println("被nope, c1c失败");
                     gotNoped = false;
                 }
 
@@ -310,14 +312,15 @@ public class Game {
                         this.underAttack = true;
                     }
                     System.out.println(pid + "跳过本回合");
+                    //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
+                    currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
+                    System.out.println("攻击成功, 目标: " + getCurrentPlayer());
                     canDraw = false;
                 } else {
                     System.out.println("被nope攻击失败");
                     gotNoped = false;
                 }
 
-                //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
-                currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
                 stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.Favor)) {
@@ -360,6 +363,10 @@ public class Game {
                     gotNoped = false;
                 }
 
+            } else if (card.getFunction().equals(Card.Function.Nope)){
+                System.out.println("Nope不可以被单独打出，重新选择出牌");
+                this.invalidCardPlay = false;
+                getPlayerHand(pid).addAll(selectedCard);
             }
 
         } else if (this.selectedCard.size() == 2 && sameCatCard(this.selectedCard)) {
