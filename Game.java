@@ -29,7 +29,7 @@ public class Game {
         int playerNum = sc.nextInt();
 
         while (playerNum < 2 || playerNum > 4) {
-            System.out.print("重新输入");
+            System.out.print("游戏必须为2-4人, 重新输入: ");
             playerNum = sc.nextInt();
         }
 
@@ -115,7 +115,11 @@ public class Game {
     }
 
     public Card getPlayerCard(ArrayList<Card> targetHand, int index) {
-        return targetHand.set(index,null);
+        return targetHand.set(index, null);
+    }
+
+    public Card takeFromStockpile(ArrayList<Card> stockpile, int index) {
+        return stockpile.remove(index);
     }
 
     //检查玩家是否还有手牌
@@ -123,7 +127,7 @@ public class Game {
         return getPlayerHand(pid).isEmpty();
     }
 
-    //检查是否轮到该玩家回合,还需要完善打出nope的case
+    //检查是否轮到该玩家回合
     public void checkPlayerTurn(String pid) throws InvalidPlayerTurnException {
         if (!this.playerIds.get(this.currentPlayerIndex).equals(pid)) {
             throw new InvalidPlayerTurnException("It is not " + pid + " 's turn", pid);
@@ -156,18 +160,18 @@ public class Game {
 
 
     //判断玩家所出得牌是否为全部一样的猫猫牌
-    public boolean differentCatCard(ArrayList<Card> catCard) {
+    public boolean differentCatCard(ArrayList<Card> cards) {
         //判断集合中的牌均为普通猫猫牌
-        for (Card card : catCard) {
+        for (Card card : cards) {
             if (!card.getFunction().equals(Card.Function.NotFunction)) {
                 return false;
             }
         }
 
         //利用HashSet不允许存储重复元素的特点来判断catCard集合中的猫猫是否都是不同的品种
-        HashSet<Card> set = new HashSet<>(catCard);
+        HashSet<Card> set = new HashSet<>(cards);
 
-        return catCard.size() == set.size();
+        return cards.size() == set.size();
     }
 
     //玩家出牌动作
@@ -203,13 +207,13 @@ public class Game {
             }
 
             //如果玩家选择的牌符合出牌规则则结算出牌
-            if (!selectedCard.isEmpty()){
+            if (!selectedCard.isEmpty()) {
                 playCard(pid);
 
                 //如果所选牌面结算后抽牌状态为false则说明打出skip/attack，则终止选牌
-                if (!canDraw){
+                if (!canDraw) {
                     break;
-                } else if (invalidCardPlay){
+                } else if (invalidCardPlay) {
                     invalidCardPlay = false;
                     continue;
                 }
@@ -253,8 +257,7 @@ public class Game {
                     System.out.println("被nope出牌无效");
                     gotNoped = false;
                 }
-                //从手牌中移除打出的牌
-                getPlayerHand(pid).removeAll(selectedCard);
+
                 //将该牌加入弃牌堆
                 stockpile.add(new Card(Card.Function.Shuffle, Card.Cat.NotCat));
 
@@ -278,7 +281,6 @@ public class Game {
                     gotNoped = false;
                 }
 
-                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.Skip, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.SeeTheFuture)) {
@@ -296,7 +298,6 @@ public class Game {
                     gotNoped = false;
                 }
 
-                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.SeeTheFuture, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.Attack)) {
@@ -316,7 +317,6 @@ public class Game {
 
                 //如果打出Attack，则直接结束自身回合，强制下一位玩家连续进行两个回合
                 currentPlayerIndex = (currentPlayerIndex + 1) % playerIds.size();
-                getPlayerHand(pid).removeAll(selectedCard);
                 stockpile.add(new Card(Card.Function.Attack, Card.Cat.NotCat));
 
             } else if (card.getFunction().equals(Card.Function.Favor)) {
@@ -350,7 +350,6 @@ public class Game {
                         //从目标玩家处获取一张目标玩家自选手牌加入自身牌组
                         pHand.add(targetHand.remove(targetChoice));
 
-                        getPlayerHand(pid).removeAll(selectedCard);
                         stockpile.add(new Card(Card.Function.Favor, Card.Cat.NotCat));
                     } else {
                         //丢出有关index的exception
@@ -398,7 +397,6 @@ public class Game {
                     //从目标玩家处抽取一张手牌加入自身牌组
                     pHand.add(getPlayerCard(getPlayerHand(targetPlayer), targetChoice));
 
-                    getPlayerHand(pid).removeAll(selectedCard);
                     for (Card cat : selectedCard) {
                         stockpile.add(cat);
                     }
@@ -450,7 +448,6 @@ public class Game {
 
             if (!gotNoped) {
                 pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
-                getPlayerHand(pid).removeAll(selectedCard);
 
                 for (Card cat : selectedCard) {
                     stockpile.add(cat);
@@ -462,28 +459,27 @@ public class Game {
 
         } else if (this.selectedCard.size() == 5 && differentCatCard(this.selectedCard)) {
             //若玩家打出的牌为五张不同的普通猫组合，则可从弃牌堆内拿曲任意一张牌
-            Scanner sc = new Scanner(System.in);
-            System.out.println("请输入想从弃牌堆获取的牌面编号");
-            System.out.println("1: Defuse, 2: Attack, 3:Favor, 4: SeeTheFuture...");
-            int targetCardIndex = sc.nextInt();
+            System.out.println(pid + "打出5张不同的猫猫牌准备召唤神龙");
 
-            while (targetCardIndex < 0 || targetCardIndex > 12) {
-                //甩出invalidInput exception
-                System.out.println("invalid input 重新输入");
-                targetCardIndex = sc.nextInt();
-            }
+            //判定有没有玩家打出nope
+            anyOneNope(pid);
 
-            Card targetCard = wantCard(targetCardIndex, this.stockpile);
+            if (!gotNoped && stockpile.size() > 0){
+                Scanner sc = new Scanner(System.in);
+                System.out.println("弃牌堆: " + stockpile);
+                System.out.print("请输入想从弃牌堆获取的牌面index, 范围1-" + stockpile.size() + ": ");
+                int index = sc.nextInt() - 1;
 
-            if (!gotNoped) {
-                //如果弃牌堆内有targetCard，则删除弃牌堆内该牌并将之加入该玩家手牌
-                getPlayerHand(pid).removeAll(selectedCard);
-
-                for (Card cat : selectedCard) {
-                    stockpile.add(cat);
+                while (index > stockpile.size() && index < 0) {
+                    System.out.println("index越界,重新输入: ");
+                    index = sc.nextInt() - 1;
                 }
-                stockpile.remove(targetCard);
-                pHand.add(targetCard);
+
+                //手牌中加入从stockpile中选择的牌
+                pHand.add(takeFromStockpile(this.stockpile, index));
+
+            } else if (stockpile.size() == 0){
+                System.out.println("弃牌堆内无牌，召唤神龙失败");
             } else {
                 System.out.println("被nope出牌无效");
                 gotNoped = false;
