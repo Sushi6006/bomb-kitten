@@ -210,10 +210,11 @@ public class Game {
             if (!selectedCard.isEmpty()) {
                 playCard(pid);
 
-                //如果所选牌面结算后抽牌状态为false则说明打出skip/attack，则终止选牌
                 if (!canDraw) {
+                    //如果所选牌面结算后抽牌状态为false则说明打出skip/attack，则终止选牌
                     break;
                 } else if (invalidCardPlay) {
+                    //如果经playCard内部判定程序判定为不符合规则的出牌则重新选择出牌
                     invalidCardPlay = false;
                     continue;
                 }
@@ -254,7 +255,7 @@ public class Game {
                     deck.shuffle();
                 } else {
                     //如果被nope了，则重置nope状态
-                    System.out.println("被nope出牌无效");
+                    System.out.println("被nope洗牌失败");
                     gotNoped = false;
                 }
 
@@ -277,7 +278,7 @@ public class Game {
                     System.out.println(pid + "跳过本回合");
                     canDraw = false;
                 } else {
-                    System.out.println("被nope出牌无效");
+                    System.out.println("被nope跳过回合失败");
                     gotNoped = false;
                 }
 
@@ -294,7 +295,7 @@ public class Game {
                     //需要在gui向玩家输出三张牌的牌面信息
                     System.out.println("顶部三张牌: " + topThreeCards);
                 } else {
-                    System.out.println("被nope出牌无效");
+                    System.out.println("被nope看不到了");
                     gotNoped = false;
                 }
 
@@ -311,7 +312,7 @@ public class Game {
                     System.out.println(pid + "跳过本回合");
                     canDraw = false;
                 } else {
-                    System.out.println("被nope出牌无效");
+                    System.out.println("被nope攻击失败");
                     gotNoped = false;
                 }
 
@@ -355,7 +356,7 @@ public class Game {
                         //丢出有关index的exception
                     }
                 } else {
-                    System.out.println("被nope出牌无效");
+                    System.out.println("被nope调情失败");
                     gotNoped = false;
                 }
 
@@ -370,14 +371,16 @@ public class Game {
             Scanner sc = new Scanner(System.in);
 
             //需要对当前玩家屏幕输出
-            System.out.println("请输入想要抽牌的对象id");
+            System.out.print("请输入想抽取对象id: ");
             String targetPlayer = sc.next();
 
-
-            //如目标玩家手牌为空则当前玩家重新选择抽牌目标
-            while (hasEmptyHand(targetPlayer)) {
-                //如目标玩家手牌为空，指定玩家重新选择抽牌目标
-                System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+            while (!this.playerIds.contains(targetPlayer) || hasEmptyHand(targetPlayer)) {
+                if (!this.playerIds.contains(targetPlayer)) {
+                    System.out.print("该玩家不存在, 重新指定一名玩家: ");
+                } else {
+                    //如目标玩家手牌为空，指定玩家重新选择抽牌目标
+                    System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+                }
                 targetPlayer = sc.next();
             }
 
@@ -388,29 +391,29 @@ public class Game {
                 //获取该目标玩家手牌信息
                 ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
 
-                System.out.println("输入想选择牌的index，左起第一张为1");
+                System.out.print("输入抽取第几张牌，1 - " + targetHand.size() + ": ");
 
                 //玩家输入选择的牌面index
                 int targetChoice = sc.nextInt() - 1;
 
-                if (targetChoice < targetHand.size() && targetChoice >= 0) {
-                    //从目标玩家处抽取一张手牌加入自身牌组
-                    pHand.add(getPlayerCard(getPlayerHand(targetPlayer), targetChoice));
-
-                    for (Card cat : selectedCard) {
-                        stockpile.add(cat);
-                    }
-
-                } else {
-                    //丢出有关index的exception
+                while (targetChoice < 0 || targetChoice > targetHand.size()) {
+                    //丢出invalidInput exception
+                    System.out.print("invalid input 重新输入: ");
+                    targetChoice = sc.nextInt();
                 }
+
+
+                pHand.add(getPlayerCard(getPlayerHand(targetPlayer), targetChoice));
+
+                this.stockpile.addAll(selectedCard);
+
             } else {
-                System.out.println("被nope出牌无效");
+                System.out.println("被nope抽取失败");
                 gotNoped = false;
             }
 
         } else if (this.selectedCard.size() == 3 && sameCatCard(this.selectedCard)) {
-            //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由该玩家指定
+            //若玩家打出的牌为三张相同的普通猫组合，则指定一名玩家所要一张手牌，牌面由打出猫猫组合的玩家指定(若被指定玩家有则必须给你)
 
             //获取猫猫牌牌面
             Card card = this.selectedCard.get(0);
@@ -418,43 +421,55 @@ public class Game {
             Scanner sc = new Scanner(System.in);
 
             //需要对当前玩家屏幕输出
-            System.out.println("请输入索要对象id");
+            System.out.print("请输入索要对象id: ");
             String targetPlayer = sc.next();
 
-
-            //如目标玩家手牌为空则当前玩家重新选择抽牌目标
-            while (hasEmptyHand(targetPlayer)) {
-                //如目标玩家手牌为空，指定玩家重新选择抽牌目标
-                System.out.println("该玩家无手牌，请选择其他玩家抽牌");
+            while (!this.playerIds.contains(targetPlayer) || hasEmptyHand(targetPlayer)) {
+                if (!this.playerIds.contains(targetPlayer)) {
+                    System.out.print("该玩家不存在, 重新指定一名玩家: ");
+                } else {
+                    //如目标玩家手牌为空，指定玩家重新选择抽牌目标
+                    System.out.println("该玩家无手牌，请选择其他玩家索要");
+                }
                 targetPlayer = sc.next();
             }
 
-            System.out.println("请输入想索要的牌面编号");
-            System.out.println("1: Defuse, 2: Attack, 3:Favor, 4: SeeTheFuture...");
+            System.out.println("请输入想索要的牌面编号: ");
+            System.out.println("1.Defuse, 2.Attack, 3.Favor, 4.SeeTheFuture");
+            System.out.println("5.Nope, 6.Shuffle, 7.Skip, 8.TacoCat");
+            System.out.println("9.BeardCat, 10.HairyPotatoCat, 11.RainbowRalphingCat, 12.Cattermelon");
+
             int targetCardIndex = sc.nextInt();
 
             while (targetCardIndex < 0 || targetCardIndex > 12) {
-                //都出invalidInput exception
-                System.out.println("invalid input 重新输入");
+                //丢出invalidInput exception
+                System.out.print("invalid input 重新输入: ");
                 targetCardIndex = sc.nextInt();
             }
+
             //获取该目标玩家手牌信息
             ArrayList<Card> targetHand = getPlayerHand(targetPlayer);
 
-            Card targetCard = wantCard(targetCardIndex, targetHand);
-
+            Card targetCard = wantCard(targetCardIndex);
             System.out.println(pid + "打出三张" + card.toString() + ",索要" + targetPlayer + "的" + targetCard.toString());
-            anyOneNope(pid);
 
-            if (!gotNoped) {
-                pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
-
-                for (Card cat : selectedCard) {
-                    stockpile.add(cat);
-                }
+            if (!targetHand.contains(targetCard)) {
+                //如目标玩家手牌中没有出牌玩家指定的牌，则索要失败
+                System.out.println("所选牌组中无" + targetCard.toString() + ",索要失败。");
             } else {
-                System.out.println("被nope出牌无效");
-                gotNoped = false;
+                //判断有没有玩家打出nope
+                anyOneNope(pid);
+
+                if (!gotNoped) {
+                    System.out.println("索要成功");
+                    pHand.add(getPlayerCard(targetHand, targetHand.indexOf(targetCard)));
+
+                    stockpile.addAll(selectedCard);
+                    System.out.println(stockpile);
+                } else {
+                    System.out.println("被nope索要失败");
+                    gotNoped = false;
+                }
             }
 
         } else if (this.selectedCard.size() == 5 && differentCatCard(this.selectedCard)) {
@@ -464,7 +479,7 @@ public class Game {
             //判定有没有玩家打出nope
             anyOneNope(pid);
 
-            if (!gotNoped && stockpile.size() > 0){
+            if (!gotNoped && stockpile.size() > 0) {
                 Scanner sc = new Scanner(System.in);
                 System.out.println("弃牌堆: " + stockpile);
                 System.out.print("请输入想从弃牌堆获取的牌面index, 范围1-" + stockpile.size() + ": ");
@@ -477,8 +492,9 @@ public class Game {
 
                 //手牌中加入从stockpile中选择的牌
                 pHand.add(takeFromStockpile(this.stockpile, index));
+                stockpile.addAll(selectedCard);
 
-            } else if (stockpile.size() == 0){
+            } else if (stockpile.size() == 0) {
                 System.out.println("弃牌堆内无牌，召唤神龙失败");
             } else {
                 System.out.println("被nope出牌无效");
@@ -638,28 +654,23 @@ public class Game {
         getPlayerCard(getPlayerHand(pid), nopeIndex);
     }
 
-    public Card wantCard(int targetCardIndex, ArrayList<Card> targetHand) {
+    public Card wantCard(int targetCardIndex) {
         Card targetCard = null;
-        do {
-            switch (targetCardIndex) {
-                case 1 -> targetCard = new Card(Card.Function.Defuse, Card.Cat.NotCat);
-                case 2 -> targetCard = new Card(Card.Function.Attack, Card.Cat.NotCat);
-                case 3 -> targetCard = new Card(Card.Function.Favor, Card.Cat.NotCat);
-                case 4 -> targetCard = new Card(Card.Function.SeeTheFuture, Card.Cat.NotCat);
-                case 5 -> targetCard = new Card(Card.Function.Nope, Card.Cat.NotCat);
-                case 6 -> targetCard = new Card(Card.Function.Shuffle, Card.Cat.NotCat);
-                case 7 -> targetCard = new Card(Card.Function.Skip, Card.Cat.NotCat);
-                case 8 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.TacoCat);
-                case 9 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.BeardCat);
-                case 10 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.HairyPotatoCat);
-                case 11 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.RainbowRalphingCat);
-                case 12 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.Cattermelon);
-            }
-            if (!targetHand.contains(targetCard)) {
-                //如目标玩家手牌中没有出牌玩家指定的牌，提示出牌玩家更换想要的牌
-                System.out.println("所选牌组中无" + targetCard.toString() + ",请重新选择目标牌面");
-            }
-        } while (!targetHand.contains(targetCard));
+
+        switch (targetCardIndex) {
+            case 1 -> targetCard = new Card(Card.Function.Defuse, Card.Cat.NotCat);
+            case 2 -> targetCard = new Card(Card.Function.Attack, Card.Cat.NotCat);
+            case 3 -> targetCard = new Card(Card.Function.Favor, Card.Cat.NotCat);
+            case 4 -> targetCard = new Card(Card.Function.SeeTheFuture, Card.Cat.NotCat);
+            case 5 -> targetCard = new Card(Card.Function.Nope, Card.Cat.NotCat);
+            case 6 -> targetCard = new Card(Card.Function.Shuffle, Card.Cat.NotCat);
+            case 7 -> targetCard = new Card(Card.Function.Skip, Card.Cat.NotCat);
+            case 8 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.TacoCat);
+            case 9 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.BeardCat);
+            case 10 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.HairyPotatoCat);
+            case 11 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.RainbowRalphingCat);
+            case 12 -> targetCard = new Card(Card.Function.NotFunction, Card.Cat.Cattermelon);
+        }
 
         return targetCard;
     }
