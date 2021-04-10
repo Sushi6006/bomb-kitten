@@ -14,6 +14,7 @@ public class Game {
     private boolean underAttack; //记录当前玩家是否被上家Attack
     private boolean gotNoped; //用于判断当前出牌是否被nope
     private boolean canDraw; //用于判断当前玩家是否可以摸牌
+    private boolean invalidCardPlay; //用于判断当前玩家出牌是否符合规则
 
 
     public static void main(String[] args) {
@@ -55,9 +56,6 @@ public class Game {
 
         //记录当前出牌是否被nope
         gotNoped = false;
-
-        //记录当前回合是否可以摸牌
-        canDraw = true;
 
         //记录当前回合有多少炸弹需要被放回牌堆
         bombNeededBack = 0;
@@ -117,7 +115,7 @@ public class Game {
     }
 
     public Card getPlayerCard(ArrayList<Card> targetHand, int index) {
-        return targetHand.get(index);
+        return targetHand.set(index,null);
     }
 
     //检查玩家是否还有手牌
@@ -172,21 +170,21 @@ public class Game {
         return catCard.size() == set.size();
     }
 
-    //玩家选择要出的牌
+    //玩家出牌动作
     public void selectCard(String pid) {
-        this.canDraw = false;
-        HashSet<Card> selectedSet = new HashSet<>(selectedCard);
-        boolean keepGoing = true;
+        //每次开始选牌时将抽牌状态重设为true，后续根据情况更新抽牌状态
+        this.canDraw = true;
         Scanner sc = new Scanner(System.in);
 
+        //只要玩家手牌足够且没有手动选择结束出牌，则玩家可以一直出牌
         outerLoop:
-        while (keepGoing && getPlayerHand(pid).size() > 0) {
+        while (getPlayerHand(pid).size() > 0) {
             //打印玩家手牌供玩家选择
             System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
             System.out.println(" 请选择您本轮想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
             System.out.print("输入指令: ");
 
-            //玩家选牌
+            //读入玩家输入的所有指令(兼容一行内选择多张卡片)
             if (sc.hasNextLine()) {
                 String line = sc.nextLine();
                 Scanner scan = new Scanner(line);
@@ -194,11 +192,9 @@ public class Game {
                     int index = scan.nextInt() - 1;
                     if (index < getPlayerHand(pid).size() && index > -1) {
                         //计算机判定左起第一位是0，所以玩家的输入需要手动减1
-                        selectedSet.add(getPlayerCard(getPlayerHand(pid), index));
+                        selectedCard.add(getPlayerCard(getPlayerHand(pid), index));
                     } else if (index == -1) {
-                        keepGoing = false;
-                        this.canDraw = true;
-                        break;
+                        break outerLoop;
                     } else {
                         System.out.println("手牌index越界,重新输入");
                         continue outerLoop;
@@ -207,19 +203,26 @@ public class Game {
             }
 
             //如果玩家选择的牌符合出牌规则则结算出牌
-            if (!selectedSet.isEmpty()){
-                selectedCard.addAll(selectedSet);
+            if (!selectedCard.isEmpty()){
                 playCard(pid);
-                selectedSet.clear();
-                selectedCard.clear();
-            }
 
-            //如果该玩家当前回合可以摸牌则摸牌结束回合
-            if (canDraw) {
-                drawCard(pid);
+                //如果所选牌面结算后抽牌状态为false则说明打出skip/attack，则终止选牌
+                if (!canDraw){
+                    break;
+                } else if (invalidCardPlay){
+                    invalidCardPlay = false;
+                    continue;
+                }
+                //清空手牌中所有占位null值
+                getPlayerHand(pid).removeAll(Collections.singleton(null));
+                selectedCard.clear();
             }
         }
 
+        //如果当前玩家结束出牌时摸牌状态为true则可以摸牌结束回合
+        if (canDraw) {
+            drawCard(pid);
+        }
     }
 
 
@@ -490,6 +493,9 @@ public class Game {
 
         } else {
             //丢出InvalidCardPLayException需要后续实现
+            //如玩家所选出牌组合不合规则将所选择牌重新放入玩家手牌
+            this.invalidCardPlay = false;
+            getPlayerHand(pid).addAll(selectedCard);
             System.out.println("无效组合，请重新选择出牌组合");
         }
     }
@@ -574,8 +580,6 @@ public class Game {
             }
 
         }
-
-        System.out.println();
 
     }
 
