@@ -177,34 +177,44 @@ public class Game {
         this.canDraw = false;
         HashSet<Card> selectedSet = new HashSet<>(selectedCard);
         boolean keepGoing = true;
+        Scanner sc = new Scanner(System.in);
 
-        //打印玩家手牌供玩家选择
-        System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
-        System.out.println(" 请选择您本轮想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
-
+        outerLoop:
         while (keepGoing && getPlayerHand(pid).size() > 0) {
+            //打印玩家手牌供玩家选择
+            System.out.print(pid + "手牌: " + getPlayerHand(pid).toString());
+            System.out.println(" 请选择您本轮想要打出的牌" + "1 - " + getPlayerHand(pid).size() + ", 输入0结束本回合");
             System.out.print("输入指令: ");
-            Scanner sc = new Scanner(System.in).useDelimiter(" *");
-            while (sc.hasNextInt()) {
-                int index = sc.nextInt() - 1;
-                if (index < getPlayerHand(pid).size() && index > -1) {
-                    //计算机判定左起第一位是0，所以玩家的输入需要手动减1
-                    selectedSet.add(getPlayerCard(getPlayerHand(pid), index));
-                } else if (index == -1) {
-                    keepGoing = false;
-                    this.canDraw = true;
-                    break;
-                } else {
-                    System.out.println("手牌index越界,重新输入");
-                    continue;
+
+            //玩家选牌
+            if (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                Scanner scan = new Scanner(line);
+                while (scan.hasNextInt()) {
+                    int index = scan.nextInt() - 1;
+                    if (index < getPlayerHand(pid).size() && index > -1) {
+                        //计算机判定左起第一位是0，所以玩家的输入需要手动减1
+                        selectedSet.add(getPlayerCard(getPlayerHand(pid), index));
+                    } else if (index == -1) {
+                        keepGoing = false;
+                        this.canDraw = true;
+                        break;
+                    } else {
+                        System.out.println("手牌index越界,重新输入");
+                        continue outerLoop;
+                    }
                 }
             }
-            selectedCard.addAll(selectedSet);
-            playCard(pid);
-            System.out.println("剩余手牌: " + getPlayerHand(pid));
-            selectedSet.clear();
-            selectedCard.clear();
 
+            //如果玩家选择的牌符合出牌规则则结算出牌
+            if (!selectedSet.isEmpty()){
+                selectedCard.addAll(selectedSet);
+                playCard(pid);
+                selectedSet.clear();
+                selectedCard.clear();
+            }
+
+            //如果该玩家当前回合可以摸牌则摸牌结束回合
             if (canDraw) {
                 drawCard(pid);
             }
