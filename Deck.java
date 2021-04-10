@@ -16,7 +16,7 @@ public class Deck {
 
     //配置牌组
     public void prepareDeck() {
-        //准备eeTheFuture与Nope
+        //准备seeTheFuture与Nope
         Card.Function[] functionWithFiveCards = new Card.Function[]{
                 Card.Function.SeeTheFuture,
                 Card.Function.Nope
@@ -59,6 +59,7 @@ public class Deck {
 
         //将多余的命加入牌组
         addDefuse();
+        shuffle();
     }
 
     //洗牌
@@ -91,13 +92,13 @@ public class Deck {
 
 
     //开局每人发4张牌
-    public Card[] dealCard(int a) {
+    public LinkedList<Card> dealCard(int a) {
         if (a != 4) {
             throw new IllegalArgumentException("Must deal 4 cards at the beginning");
         }
-        Card[] ret = new Card[a];
+        LinkedList<Card> ret = new LinkedList<>();
         for (int i = 0; i < a; i++) {
-            ret[i] = cards.removeLast();
+            ret.add(cards.removeLast());
         }
         return ret;
     }
