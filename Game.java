@@ -659,6 +659,8 @@ public class Game {
 
         //调用方法从pid手牌中移除一张Nope
         getPlayerCard(getPlayerHand(pid), nopeIndex);
+        //清空手牌中所有占位null值,清空selectedCard缓存
+        getPlayerHand(pid).removeAll(Collections.singleton(null));
     }
 
     public Card wantCard(int targetCardIndex) {
